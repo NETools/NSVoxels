@@ -1,0 +1,100 @@
+
+#----------------------------- Global Properties ----------------------------#
+
+/outputDir:../bin/$(Configuration)/.net5.0-windows/Content
+/intermediateDir:../obj/$(Configuration)/.net5.0-windows/Content
+/platform:Windows
+/config:Debug
+/profile:HiDef
+/compress:False
+
+#-------------------------------- References --------------------------------#
+
+
+#---------------------------------- Content ---------------------------------#
+
+#begin Accelerator/AcceleratorGenerator.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Accelerator/AcceleratorGenerator.fx
+
+#begin font.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:font.spritefont
+
+#begin Generator/DemoSceneGenerator.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Generator/DemoSceneGenerator.fx
+
+#begin Postprocessor/MedianFilter.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Postprocessor/MedianFilter.fx
+
+#begin Raycaster/VoxelRaycaster.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Optimize
+/build:Raycaster/VoxelRaycaster.fx
+
+#begin Raycaster/VoxelRaycaster16x8.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Optimize
+/build:Raycaster/VoxelRaycaster16x8.fx
+
+#begin Textures/scene0/0.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Textures/scene0/0.png
+
+#begin Textures/scene0/1.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Textures/scene0/1.png
+
+#begin Textures/scene0/2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Textures/scene0/2.png
+
+#begin Textures/scene0/3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Textures/scene0/3.png
+

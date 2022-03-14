@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>.net5.0-windows</TargetFramework>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <TieredCompilation>false</TieredCompilation>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>NSVoxels</RootNamespace>
+    <ApplicationIcon />
+    <StartupObject />
+    <Platforms>AnyCPU;x64;ARM64</Platforms>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+   <ItemGroup>
+    <None Remove=".gitignore" />
+    <None Remove="Content\ShaderSampleGL.mgcb" />
+    <Compile Remove="Content\dynamics\**" />
+    <EmbeddedResource Remove="Content\dynamics\**" />
+    <None Remove="Content\bin\**" />
+    <None Remove="Content\dynamics\**" />
+    <None Remove="Directory.Build.props" />
+  </ItemGroup>
+  <ItemGroup>
+    <MonoGameContentReference Include="Content\ContentManager.mgcb" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Content.Builder.Task.Compute" Version="3.8.1.2" />
+    <PackageReference Include="MonoGame.Framework.Compute.WindowsDX" Version="3.8.1.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <TrimmerRootAssembly Include="Microsoft.Xna.Framework.Content.ContentTypeReader" Visible="false" />
+  </ItemGroup>
+</Project>
