@@ -1,6 +1,6 @@
 ﻿#define GroupSize 4 // requires further investigation
 
-
+// simplex noise source: https://gist.github.com/dario-zubovic/e8c4b1f6619b69ba2090123a6e1c2584
 // based on https://github.com/keijiro/NoiseShader/blob/master/Assets/GLSL/SimplexNoise2D.glsl
 // which itself is modification of https://github.com/ashima/webgl-noise/blob/master/src/noise3D.glsl
 // 
