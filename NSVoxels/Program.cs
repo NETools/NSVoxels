@@ -12,7 +12,7 @@ namespace NSVoxels
         private static extern bool AllocConsole();
         static void Main()
         {
-            AllocConsole();
+            //AllocConsole();
 
             using (var frm  = new BootScreen())
             {

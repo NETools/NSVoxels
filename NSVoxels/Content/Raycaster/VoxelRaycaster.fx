@@ -33,6 +33,7 @@ struct Voxel
 {
     int data;
     bool isReflectable;
+    bool isGlass;
 };
 
 uniform Texture3D<float4> voxelDataBuffer;
@@ -54,6 +55,7 @@ Voxel getVoxel(int packedVoxel)
     Voxel voxel = (Voxel) 0;
     voxel.data = packedVoxel & 0xff;
     voxel.isReflectable = packedVoxel & (1 << 8);
+    voxel.isGlass = packedVoxel & (1 << 9);
     
     return voxel;
 }
@@ -260,6 +262,7 @@ bool arrayRayHit(in Ray ray,
         nextVoxel.center = intPosition3;
             
         depth = lambdaMax;
+
     }
     
     
@@ -489,6 +492,66 @@ RaytracingResult volumeRayTest(Ray ray, int maxIterations)
     
 }
 
+float4 calculateShadow(RaytracingResult rtrslt, float4 currentColor)
+{
+    float3 lightVoxelDirection = normalize(lightPosition0 - rtrslt.hitPointF32);
+    float3 shadowCastOrigin = rtrslt.hitPointF32;
+        
+    Ray shadowRay = (Ray) 0;
+    shadowRay.dir = lightVoxelDirection;
+    shadowRay.dirRcp = rcp(shadowRay.dir);
+    shadowRay.origin = shadowCastOrigin + rtrslt.surfaceNormal * .1f;
+        
+    RaytracingResult shadowRaycastRslt = volumeRayTest(shadowRay, shadowMaxAcceleratorIterations);
+    currentColor.rgb *= !shadowRaycastRslt.isNull * 0.2f + (1.0f - !shadowRaycastRslt.isNull);
+    return currentColor;
+}
+
+float4 calculateTransparency(Ray ray, RaytracingResult rtrslt, float4 currentColor)
+{
+    int3 biggerThanZeroA = ray.dirRcp > 0;
+    int3 lessThanZeroA = 1.0f - biggerThanZeroA;
+    
+    float3 minCornerA = lessThanZeroA * rtrslt.aabb.maxSize;
+    float3 maxCornerA = biggerThanZeroA * rtrslt.aabb.maxSize;
+    
+    float3 sgnsPerCompsA = biggerThanZeroA - lessThanZeroA;
+    
+    float lambdaMinA = 0;
+    float lambdaMaxA = 0;
+    
+    float3 sideMinA = (float3) 0;
+    float3 sideMaxA = (float3) 0;
+    
+    bool b = checkHit(ray, rtrslt.aabb, sgnsPerCompsA, minCornerA, maxCornerA, lambdaMinA, lambdaMaxA, sideMinA, sideMaxA);
+    
+    
+    float3 rayExitPoint = ray.origin + ray.dir * (lambdaMaxA + 0.1);
+    float3 refractedDir = refract(ray.dir, rtrslt.surfaceNormal, 1.45);
+    
+    Ray propagatedRay = (Ray) 0;
+    propagatedRay.origin = rayExitPoint;
+    propagatedRay.dir = refractedDir;
+    propagatedRay.dirRcp = rcp(propagatedRay.dir);
+    
+    RaytracingResult rslt = volumeRayTest(propagatedRay, reflectionMaxAcceleratorIterations);
+    
+    if (!rslt.isNull)
+    {
+        Voxel appearingVoxel = getVoxel(rslt.voxelDataPayload);
+        float4 appearingVoxelColor = VoxelTextures.SampleLevel(
+                                voxelTexturesSampler,
+                                float3(getTextureCoordinate(rslt.hitPointF32, rslt.surfaceNormal) * oneOverVolumeInitialSize, appearingVoxel.data - 1),
+                                0);
+        
+        currentColor.rgb = currentColor.rgb * 0.01f + 0.99f * appearingVoxelColor.rgb;
+    }
+ 
+    
+    
+    return currentColor;
+}
+
 float4 raytraceScene(Ray ray, out bool result)
 {
     float4 finalColor = (float4) 0;
@@ -509,18 +572,7 @@ float4 raytraceScene(Ray ray, out bool result)
     
     
     if (showShadow)
-    {
-        float3 lightVoxelDirection = normalize(lightPosition0 - initialRaycastRslt.hitPointF32);
-        float3 shadowCastOrigin = initialRaycastRslt.hitPointF32;
-        
-        Ray shadowRay = (Ray) 0;
-        shadowRay.dir = lightVoxelDirection;
-        shadowRay.dirRcp = rcp(shadowRay.dir);
-        shadowRay.origin = shadowCastOrigin + initialRaycastRslt.surfaceNormal * .1f;
-        
-        RaytracingResult shadowRaycastRslt = volumeRayTest(shadowRay, shadowMaxAcceleratorIterations);
-        finalColor.rgb *= !shadowRaycastRslt.isNull * 0.2f + (1.0f - !shadowRaycastRslt.isNull);
-    }
+        finalColor = calculateShadow(initialRaycastRslt, finalColor);
     
     if (showReflection & voxel.isReflectable)
     {
@@ -546,17 +598,7 @@ float4 raytraceScene(Ray ray, out bool result)
                 float3 shadowCastOriginRefl = reflectionRaycastRslt.hitPointF32;
         
                 if (showShadow)
-                {
-                    Ray reflectedShadowRay = (Ray) 0;
-                    reflectedShadowRay.dir = lightReflectedVoxelDirection;
-                    reflectedShadowRay.dirRcp = rcp(reflectedShadowRay.dir);
-                    reflectedShadowRay.origin = shadowCastOriginRefl + reflectionRaycastRslt.surfaceNormal * .1f;
-        
-                    RaytracingResult reflectionShadowRaycastRslt =
-                                            volumeRayTest(reflectedShadowRay, shadowMaxAcceleratorIterations);
-            
-                    reflectedEntityColor.rgb *= !reflectionShadowRaycastRslt.isNull * 0.2f + (1.0f - !reflectionShadowRaycastRslt.isNull);
-                }
+                    reflectedEntityColor = calculateShadow(reflectionRaycastRslt, reflectedEntityColor);
             
                 if (reflectedVoxel.isReflectable)
                 {
@@ -574,6 +616,8 @@ float4 raytraceScene(Ray ray, out bool result)
                                 float3(getTextureCoordinate(reflectionRaycastRslt.hitPointF32, reflectionRaycastRslt.surfaceNormal) * oneOverVolumeInitialSize, reflectedVoxel.data - 1),
                                 0) * !reflectionRaycastRslt.isNull + float4(0.39, 0.58, 0.93, 1) * reflectionRaycastRslt.isNull;
                     
+                    
+                    
                 }
                 else
                     break;
@@ -585,6 +629,9 @@ float4 raytraceScene(Ray ray, out bool result)
             finalColor = float4(0.39, 0.58, 0.93, 1);
     }
     
+    
+    if (voxel.isGlass)
+        finalColor = calculateTransparency(ray, initialRaycastRslt, finalColor);
     
     result = true;
     return finalColor;

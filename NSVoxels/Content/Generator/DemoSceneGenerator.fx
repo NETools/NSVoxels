@@ -1,4 +1,4 @@
-﻿#define GroupSize 4 // requires further investigation
+﻿#define GroupSize 4
 
 // simplex noise source: https://gist.github.com/dario-zubovic/e8c4b1f6619b69ba2090123a6e1c2584
 // based on https://github.com/keijiro/NoiseShader/blob/master/Assets/GLSL/SimplexNoise2D.glsl
@@ -105,6 +105,8 @@ void CS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
         voxelDataBuffer[globalID] = float4(2 / 256.0f, 1 / 256.0f, 0, 0);
     else if (globalID.x == 190 && (globalID.y >= 50 && globalID.y <= 150 && globalID.z >= 230 && globalID.z <= 270))
         voxelDataBuffer[globalID] = float4(2 / 256.0f, 1 / 256.0f, 0, 0);
+    else if (globalID.x == 233 && globalID.y == 141 && globalID.z == 244)
+        voxelDataBuffer[globalID] = float4(1 / 256.0f, 0, 0, 0);
 
 }
 
