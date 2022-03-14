@@ -105,9 +105,7 @@ void CS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
         voxelDataBuffer[globalID] = float4(2 / 256.0f, 1 / 256.0f, 0, 0);
     else if (globalID.x == 190 && (globalID.y >= 50 && globalID.y <= 150 && globalID.z >= 230 && globalID.z <= 270))
         voxelDataBuffer[globalID] = float4(2 / 256.0f, 1 / 256.0f, 0, 0);
-    else if (globalID.x == 233 && globalID.y == 141 && globalID.z == 244)
-        voxelDataBuffer[globalID] = float4(1 / 256.0f, 0, 0, 0);
-
+   
 }
 
 technique Tech0

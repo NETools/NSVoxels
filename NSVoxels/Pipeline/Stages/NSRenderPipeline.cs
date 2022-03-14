@@ -11,8 +11,9 @@ namespace NSVoxels.Pipeline.Stages
 {
     public class NSRenderPipeline
     {
-        public INStart RenderStart { get; set; }
-        public INSAccelerator Accelerator { get; set; }
+        public INStart VoxelDataGenerator { get; set; }
+        public INSAccelerator AcceleratorStructureGenerator { get; set; }
+        public INSModification Modification { get; set; }
         public INSRaytracer Raytracer { get; set; }
         public INSOutput PostProcessingFilter { get; set; }
 
@@ -28,12 +29,17 @@ namespace NSVoxels.Pipeline.Stages
 
             isStarted = true;
 
-            data = RenderStart.Begin();
+            data = VoxelDataGenerator.Begin();
 
-            Accelerator.Load();
-            accelerator = Accelerator.Create(data);
+            AcceleratorStructureGenerator.Load();
+            accelerator = AcceleratorStructureGenerator.Create(data);
 
             Raytracer.Load();   
+        }
+
+        public void Update()
+        {
+            Modification.Update(data, accelerator);
         }
 
         public void Draw()

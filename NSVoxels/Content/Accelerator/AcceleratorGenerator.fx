@@ -7,7 +7,7 @@
 
 
 RWTexture3D<float4> voxelDataBuffer;
-RWStructuredBuffer<OctreeEntry> accelerationStructureBuffer;
+globallycoherent RWStructuredBuffer<OctreeEntry>accelerationStructureBuffer;
 
 int volumeInitialSize;
 int maxDepth; // is equivalent to maxIterations

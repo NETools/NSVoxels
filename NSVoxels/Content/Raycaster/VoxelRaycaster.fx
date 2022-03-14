@@ -92,7 +92,7 @@ struct OctreeData
     int childStartIndex;
     int childrenCount;
 };
-uniform RWStructuredBuffer<OctreeData> accelerationStructureBuffer;
+globallycoherent RWStructuredBuffer<OctreeData> accelerationStructureBuffer;
 uniform Texture2D<float4> octantVectorLookUp;
 
 struct InterimOctreeData
@@ -228,9 +228,9 @@ bool arrayRayHit(in Ray ray,
     bool isOriginInside = !isInsideVolume(ray.origin, arrayCube);
     
     float3 floatPosition3 = ray.origin + lambdaMin * ray.dir * isOriginInside;
-    float3 intPosition3 = trunc(floatPosition3);
+    float3 intPosition3 = floor(floatPosition3);
         
-    float3 offset = saturate(intPosition3 - trunc(floatPosition3 + 0.01f));
+    float3 offset = saturate(intPosition3 - floor(floatPosition3 + 0.01f));
     intPosition3 -= offset;
         
     float3 pstvDirComps = saturate(sgnsPerComps);
@@ -248,9 +248,9 @@ bool arrayRayHit(in Ray ray,
                       & (maximumDepth - lambdaMin >= 1))
     {
         floatPosition3 = ray.origin + lambdaMax * ray.dir;
-        intPosition3 = trunc(floatPosition3);
+        intPosition3 = floor(floatPosition3);
          
-        float3 rightRnddComps = (intPosition3 - trunc(floatPosition3 + 0.01f)) + 1.0f; // is equivalent to: >= 0
+        float3 rightRnddComps = (intPosition3 - floor(floatPosition3 + 0.01f)) + 1.0f; // is equivalent to: >= 0
         float3 wrongRnddComps = 1 - rightRnddComps;
 
         offset = sideMax * ((pstvDirComps * wrongRnddComps) + (ngtvDirComps * rightRnddComps));

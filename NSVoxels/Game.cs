@@ -141,8 +141,8 @@ namespace NSVoxels
 
 
             renderPipeline = new NSRenderPipeline();
-            renderPipeline.RenderStart = new DemoSceneGeneration();
-            renderPipeline.Accelerator = new OctreeAccelerator();
+            renderPipeline.VoxelDataGenerator = new DemoSceneGeneration();
+            renderPipeline.AcceleratorStructureGenerator = new OctreeAccelerator();
             renderPipeline.Raytracer = new NSVoxelRaytracer();
             renderPipeline.PostProcessingFilter = new MedianFilter();
 
