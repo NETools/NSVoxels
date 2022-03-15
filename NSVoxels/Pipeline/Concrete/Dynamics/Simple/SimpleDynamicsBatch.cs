@@ -25,7 +25,7 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.Simple
         {
             components = new List<DynamicVoxelComponent>();
 
-            simpleDynamicsEffect = Statics.Content.Load<Effect>("");
+            simpleDynamicsEffect = Statics.Content.Load<Effect>("Dynamics\\Simple\\SimpleDynamicQuery");
         }
 
         public void AddComponent(DynamicVoxelComponent component)
@@ -42,15 +42,29 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.Simple
                                    BufferUsage.None,
                                    ShaderAccess.ReadWrite);
             dynamicComponentBuffer.SetData<DynamicVoxelComponent>(components.ToArray());
+            simpleDynamicsEffect.Parameters["dynamicComponents"].SetValue(dynamicComponentBuffer);
+
 
             numThreads = (int)Math.Ceiling(components.Count / 64.0) + 1;
 
 
+            int maxIterations = (int)Math.Ceiling(
+                                        Math.Log(PreStartSettings.VolumeSize / PreStartSettings.MinimumAcceleratorNodeSize) / Math.Log(2));
+            simpleDynamicsEffect.Parameters["maxDepth"].SetValue(maxIterations);
+            simpleDynamicsEffect.Parameters["volumeInitialSize"].SetValue(PreStartSettings.VolumeSize);
+
+   
         }
  
 
         public void Update(Texture3D data, StructuredBuffer accelerator)
         {
+            simpleDynamicsEffect.Parameters["accelerationStructureBuffer"].SetValue(accelerator);
+            simpleDynamicsEffect.Parameters["voxelDataBuffer"].SetValue(data);
+
+
+            simpleDynamicsEffect.Techniques["AcceleratorTechnique"].Passes["GenerateOctree"].ApplyCompute();
+            Statics.GraphicsDevice.DispatchCompute(numThreads, 1, 1);
 
         }
     }

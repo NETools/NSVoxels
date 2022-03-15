@@ -124,13 +124,22 @@ void CS(uint3 globalID : SV_DispatchThreadID)
         
         int nextToVisitOctants = getOctants(nextVoxelPosition);
         
+        /*
         if (nextToVisitOctants == visitedOctants) // NO UPDATE REQUIRED
         {
-            setData(currentVoxelPosition, float4(10, 0, 0, 0)); // DEBUG MODE
+            setData(currentVoxelPosition, float4(5, 0, 0, 0)); // DEBUG MODE
             setData(nextVoxelPosition, float4(1, 0, 0, 0));
             
             dynamicComponents[globalID.x].position = nextAbsolutePosition;
         }
+        */
+        
+        // DEBUG
+        
+        setData(currentVoxelPosition, float4(0, 0, 0, 0)); // DEBUG MODE
+        setData(nextVoxelPosition, float4(5, 1, 0, 0));
+            
+        dynamicComponents[globalID.x].position = nextAbsolutePosition;
         
     }
     

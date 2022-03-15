@@ -9,10 +9,12 @@ using NSVoxels.GUI.DebugInfo;
 using NSVoxels.GUI.Macros;
 using NSVoxels.Interactive;
 using NSVoxels.Pipeline.Concrete.Accelerator;
+using NSVoxels.Pipeline.Concrete.Dynamics.Simple;
 using NSVoxels.Pipeline.Concrete.Generator;
 using NSVoxels.Pipeline.Concrete.Postprocessor;
 using NSVoxels.Pipeline.Concrete.Raycaster;
 using NSVoxels.Pipeline.Stages;
+using NSVoxels.Structs.Dynamics.Simple;
 using System;
 
 namespace NSVoxels
@@ -140,12 +142,71 @@ namespace NSVoxels
             #endregion
 
 
+
+            MacroManager.GetDefault().DefineMacro(Keys.J, (a) =>
+            {
+                renderPipeline.Update();
+            }, false);
+
             renderPipeline = new NSRenderPipeline();
             renderPipeline.VoxelDataGenerator = new DemoSceneGeneration();
             renderPipeline.AcceleratorStructureGenerator = new OctreeAccelerator();
             renderPipeline.Raytracer = new NSVoxelRaytracer();
             renderPipeline.PostProcessingFilter = new MedianFilter();
 
+            SimpleDynamicsQuery dynQuery = new SimpleDynamicsQuery();
+            SimpleDynamicsBatch dynBatch = new SimpleDynamicsBatch();
+
+            /*
+            dynBatch.AddComponent(new DynamicVoxelComponent()
+            {
+                Position = new Vector3(240, 511, 240),
+                Direction = new Vector3(0, -1, 0)
+            });
+            dynBatch.AddComponent(new DynamicVoxelComponent()
+            {
+                Position = new Vector3(240, 510, 240),
+                Direction = new Vector3(0, -1, 0)
+            });
+            dynBatch.AddComponent(new DynamicVoxelComponent()
+            {
+                Position = new Vector3(240, 509, 240),
+                Direction = new Vector3(0, -1, 0)
+            });
+            */
+
+            const int dw = 50;
+            const int dh = 50;
+            const int dz = 50;
+
+            Vector3 center = new Vector3(240, 440, 280);
+
+
+            for (int j = -dh; j < dh; j++)
+            {
+                for (int k = -dz; k < dz; k++)
+                {
+                    for (int i = -dw; i < dw; i++)
+                    {
+                        Vector3 cur = new Vector3(i, j, k);
+                        if (cur.LengthSquared() <= 50 * 50)
+                        {
+                            dynBatch.AddComponent(new DynamicVoxelComponent()
+                            {
+                                Position = center + cur,
+                                Direction = new Vector3(-0.49f, -1, 0)
+                            });
+                        }
+                    }
+                }
+            }
+
+            dynBatch.CreateDynamicsFor();
+
+            dynQuery.AddBatch(dynBatch);
+
+            renderPipeline.Modification = dynQuery;
+            
 
             renderPipeline.Start();
 
