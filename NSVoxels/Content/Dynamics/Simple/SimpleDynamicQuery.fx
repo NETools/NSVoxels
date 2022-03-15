@@ -123,8 +123,26 @@ int getOctants(uint3 pos)
     return visitedOctants;
 }
 
-
-
+struct AABB
+{
+    float3 center;
+    float3 maxSize;
+};
+AABB createAABB(float3 center, float3 max)
+{
+    AABB aabb = (AABB) 0;
+    aabb.center = center;
+    aabb.maxSize = max;
+    return aabb;
+}
+bool isInsideVolume(float3 position, AABB aabb)
+{
+    float3 min1 = aabb.center;
+    float3 max1 = aabb.center + aabb.maxSize;
+    return
+            (position.x >= min1.x) & (position.y >= min1.y) & (position.z >= min1.z) &
+            (position.x <= max1.x) & (position.y <= max1.y) & (position.z <= max1.z);
+}
 
 [numthreads(64, 1, 1)]
 void CS(uint3 globalID : SV_DispatchThreadID)
@@ -157,6 +175,11 @@ void CS(uint3 globalID : SV_DispatchThreadID)
                         (int) nextAbsolutePosition.z);
         
         
+        if (!isInsideVolume(nextVoxelPosition, createAABB(float3(1, 1, 1), float3(511, 511, 511))))
+            return;
+        
+        
+        
         int nextToVisitOctants = getOctants(nextVoxelPosition);
         
         if (nextToVisitOctants != visitedOctants) // UPDATE OCTREE
@@ -166,7 +189,7 @@ void CS(uint3 globalID : SV_DispatchThreadID)
         }
         
         setData(currentVoxelPosition, float4(0, 0, 0, 0)); // DEBUG MODE
-        setData(nextVoxelPosition, float4(5, 1, 0, 0));
+        setData(nextVoxelPosition, float4(5, 0, 0, 0));
 
         dynamicComponents[globalID.x].position = nextAbsolutePosition;
         

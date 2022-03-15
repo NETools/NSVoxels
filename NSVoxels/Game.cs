@@ -61,6 +61,7 @@ namespace NSVoxels
             Statics.Content = Content;
 
             RaycastingSettings.FOV = 2.0f;
+            VisualSettings.UseMedianFilter = true;
 
             YawPitchCamera.Initialize();
             YawPitchCamera.CameraPosition = new Vector3(194.50781f, 422.70593f, 532.7831f);
@@ -179,7 +180,7 @@ namespace NSVoxels
             const int dh = 50;
             const int dz = 50;
 
-            Vector3 center = new Vector3(240, 440, 280);
+            Vector3 center = new Vector3(240, 455, 280);
 
 
             for (int j = -dh; j < dh; j++)

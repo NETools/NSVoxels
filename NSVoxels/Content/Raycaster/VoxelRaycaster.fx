@@ -118,6 +118,7 @@ struct RaytracingResult
     
     AABB aabb;
     
+    int iterations;
     bool isNull;
 };
 ///////////////////////////////////////////////////
@@ -197,7 +198,7 @@ bool arrayRayHit(in Ray ray,
                  out float3 hitPointI32,
                  out float3 normal,
                  out int voxelData,
-                 out AABB voxelAABB)
+                 out AABB voxelAABB, out int iterations)
 {
     
     volume.center = max(volume.center - 1, 0);
@@ -262,6 +263,7 @@ bool arrayRayHit(in Ray ray,
         nextVoxel.center = intPosition3;
             
         depth = lambdaMax;
+        iterations++;
 
     }
     
@@ -311,8 +313,9 @@ RaytracingResult acceleratedVolumeRayTest(Ray ray, int maxIterations)
         int currentIndex = 0;
         bool voxelFound = false;
         
+        int iterations = 0;
         [loop]
-        for (int iterations = 0; iterations <= maxIterations; iterations++)
+        for (iterations = 0; iterations <= maxIterations; iterations++)
         {
             int childStartIndex = parent.octreeData.childStartIndex;
             
@@ -356,8 +359,8 @@ RaytracingResult acceleratedVolumeRayTest(Ray ray, int maxIterations)
                         float3 normal = (float3) 0;
                         AABB voxelAABB = (AABB) 0;
                         int voxelData = 0;
-                        
-                        bool result = arrayRayHit(ray, childVoxel, 1000000, depth, hitPoint, hitPointInt, normal, voxelData, voxelAABB);
+                        int reserved = 0;
+                        bool result = arrayRayHit(ray, childVoxel, 1000000, depth, hitPoint, hitPointInt, normal, voxelData, voxelAABB, reserved);
                         
                         if (result)
                         {
@@ -426,7 +429,7 @@ RaytracingResult acceleratedVolumeRayTest(Ray ray, int maxIterations)
             currentIndex = nextIndex;
         }
         
-        
+        finalResult.iterations = iterations;
     }
     return finalResult;
 }
@@ -465,6 +468,7 @@ RaytracingResult volumeRayTest(Ray ray, int maxIterations)
     float3 normal = (float3) 0;
     AABB voxelAABB = (AABB) 0;
     int voxelData = 0;
+    int iterations = 0;
                         
     bool result = arrayRayHit(
                         ray, 
@@ -475,7 +479,7 @@ RaytracingResult volumeRayTest(Ray ray, int maxIterations)
                         hitPointInt, 
                         normal, 
                         voxelData, 
-                        voxelAABB);
+                        voxelAABB, iterations);
         
     RaytracingResult rtrcRslt = (RaytracingResult) 0;
         
@@ -485,7 +489,8 @@ RaytracingResult volumeRayTest(Ray ray, int maxIterations)
     rtrcRslt.surfaceNormal = normal;
     rtrcRslt.depth = depth;
     rtrcRslt.aabb = voxelAABB;
-                                
+    
+    rtrcRslt.iterations = iterations;
     rtrcRslt.isNull = !result;
         
     return rtrcRslt;
@@ -565,11 +570,14 @@ float4 raytraceScene(Ray ray, out bool result)
     
     Voxel voxel = getVoxel(initialRaycastRslt.voxelDataPayload);
     
+    //finalColor = float4(initialRaycastRslt.iterations, initialRaycastRslt.iterations, initialRaycastRslt.iterations, 32) / 32.0f;
+    
+
     finalColor = VoxelTextures.SampleLevel(
-                                voxelTexturesSampler, 
+                                voxelTexturesSampler,
                                 float3(getTextureCoordinate(initialRaycastRslt.hitPointF32, initialRaycastRslt.surfaceNormal) * oneOverVolumeInitialSize, voxel.data - 1),
                                 0);
-    
+
     
     if (showShadow)
         finalColor = calculateShadow(initialRaycastRslt, finalColor);
