@@ -22,7 +22,7 @@
 #begin Dynamics/Simple/SimpleDynamicQuery.fx
 /importer:EffectImporter
 /processor:EffectProcessor
-/processorParam:DebugMode=Auto
+/processorParam:DebugMode=Optimize
 /build:Dynamics/Simple/SimpleDynamicQuery.fx
 
 #begin font.spritefont
@@ -115,6 +115,18 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Textures/scene0/5.png
+
+#begin Textures/scene0/6.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Textures/scene0/6.png
 
 #begin Textures/scene0/dbg.png
 /importer:TextureImporter

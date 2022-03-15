@@ -50,8 +50,8 @@ void updateOctree(uint3 pos, int value)
     {
         OctreeEntry current = accelerationStructureBuffer[nextIndex];
         
-        current.hasData += value;
-        //InterlockedAdd(outputOctree[nextIndex].hasData, 1);
+        //current.hasData += value;
+        InterlockedAdd(accelerationStructureBuffer[nextIndex].hasData, value);
         
         accelerationStructureBuffer[nextIndex] = current;
         

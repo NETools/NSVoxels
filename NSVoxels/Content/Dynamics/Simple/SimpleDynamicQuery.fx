@@ -54,7 +54,7 @@ uint calculateRelativeOctant(uint3 pos, uint d)
     return calculateOctant(pos % (uint) (volumeInitialSize >> (d - 1)), d);
 }
 
-void updateOctree(uint3 pos, int value)
+void addToOctree(uint3 pos, int value)
 {
     int relativeIndex = calculateRelativeOctant(pos, 1);
     accelerationStructureBuffer[0].hasData = 1;
@@ -64,10 +64,42 @@ void updateOctree(uint3 pos, int value)
     for (int depth = 1; depth <= maxDepth; depth++)
     {
         OctreeEntry current = accelerationStructureBuffer[nextIndex];
-        InterlockedAdd(accelerationStructureBuffer[nextIndex].hasData, 1);
+        InterlockedAdd(accelerationStructureBuffer[nextIndex].hasData, value);
         relativeIndex = calculateRelativeOctant(pos, depth + 1);
         nextIndex = current.childrenStartIndex + relativeIndex;
     }
+}
+
+
+int getRelativeOctant(int packed, int index)
+{
+    return (packed >> (3 * index)) & 7;
+}
+
+void updateOctree(int oldOctants, int newOctants)
+{
+    int oldIndex = getRelativeOctant(oldOctants, 0) + 1;
+    int newIndex = getRelativeOctant(newOctants, 0) + 1;
+    
+    for (int depth = 1; depth <= maxDepth; depth++)
+    {
+        OctreeEntry oldNode = accelerationStructureBuffer[oldIndex];
+        OctreeEntry newNode = accelerationStructureBuffer[newIndex];
+        
+        if (oldIndex != newIndex)
+        {
+            InterlockedAdd(accelerationStructureBuffer[oldIndex].hasData, -1);
+            InterlockedAdd(accelerationStructureBuffer[newIndex].hasData, +1);   
+        }
+        
+        
+        
+        oldIndex = oldNode.childrenStartIndex + getRelativeOctant(oldOctants, depth);
+        newIndex = newNode.childrenStartIndex + getRelativeOctant(newOctants, depth);
+    }
+    
+    
+    
 }
 
 int getOctants(uint3 pos)
@@ -77,7 +109,7 @@ int getOctants(uint3 pos)
     int relativeIndex = calculateRelativeOctant(pos, 1);
     int nextIndex = relativeIndex + 1;
 
-    visitedOctants = nextIndex;
+    visitedOctants = nextIndex - 1;
     
     for (int depth = 1; depth <= maxDepth; depth++)
     {
@@ -90,6 +122,9 @@ int getOctants(uint3 pos)
     
     return visitedOctants;
 }
+
+
+
 
 [numthreads(64, 1, 1)]
 void CS(uint3 globalID : SV_DispatchThreadID)
@@ -111,7 +146,7 @@ void CS(uint3 globalID : SV_DispatchThreadID)
             
         int currentVoxel = getData(currentVoxelPosition);
         if (currentVoxel == 0) // NO DATA YET, UPDATE OCTTREE
-            updateOctree(currentVoxelPosition, 1);
+            addToOctree(currentVoxelPosition, 1);
     }
     else
     {
@@ -124,21 +159,15 @@ void CS(uint3 globalID : SV_DispatchThreadID)
         
         int nextToVisitOctants = getOctants(nextVoxelPosition);
         
-        /*
-        if (nextToVisitOctants == visitedOctants) // NO UPDATE REQUIRED
+        if (nextToVisitOctants != visitedOctants) // UPDATE OCTREE
         {
-            setData(currentVoxelPosition, float4(5, 0, 0, 0)); // DEBUG MODE
-            setData(nextVoxelPosition, float4(1, 0, 0, 0));
-            
-            dynamicComponents[globalID.x].position = nextAbsolutePosition;
+            dynamicComponents[globalID.x].visitedOctants = nextToVisitOctants;
+            updateOctree(visitedOctants, nextToVisitOctants);
         }
-        */
-        
-        // DEBUG
         
         setData(currentVoxelPosition, float4(0, 0, 0, 0)); // DEBUG MODE
         setData(nextVoxelPosition, float4(5, 1, 0, 0));
-            
+
         dynamicComponents[globalID.x].position = nextAbsolutePosition;
         
     }

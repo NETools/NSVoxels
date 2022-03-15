@@ -92,11 +92,21 @@ RWTexture3D<float4> voxelDataBuffer;
 void CS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
             uint localIndex : SV_GroupIndex, uint3 globalID : SV_DispatchThreadID)
 {
+    
+    
+    float noiseY = snoise(float2(globalID.x / 256.0f, globalID.z / 256.0f)) * 60 + 70;
+    
     float3 dist = globalID - float3(256, 256, 256);
-    if (dot(dist, dist) <= 64 * 64)
-        voxelDataBuffer[globalID] = float4(1 / 256.0f, 0, 0, 0);
-    else if (globalID.y <= snoise(float2(globalID.x / 256.0f, globalID.z / 256.0f)) * 60 + 70)
+    if (dot(dist, dist) <= 60 * 60)
         voxelDataBuffer[globalID] = float4(3 / 256.0f, 0, 0, 0);
+    else if (dot(dist, dist) >= 60 * 60 && dot(dist, dist) <= 64 * 64)
+        voxelDataBuffer[globalID] = float4(1 / 256.0f, 0, 0, 0);
+    
+    else if (globalID.y <= noiseY - 5)
+        voxelDataBuffer[globalID] = float4(3 / 256.0f, 0, 0, 0);
+    else if (globalID.y >= noiseY - 5 && globalID.y <= noiseY)
+        voxelDataBuffer[globalID] = float4(6 / 256.0f, 0, 0, 0);
+    
     else if (globalID.x == 10 && globalID.y <= 200 && (globalID.z <= 200 || globalID.z >= 300))
         voxelDataBuffer[globalID] = float4(4 / 256.0f, 0, 0, 0);
     else if (globalID.x == 10 && globalID.y <= 200 && !(globalID.z <= 200 || globalID.z >= 300))
