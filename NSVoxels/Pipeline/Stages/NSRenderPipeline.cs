@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using NSVoxels.Globals;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,6 +45,7 @@ namespace NSVoxels.Pipeline.Stages
 
         public void Update()
         {
+
             var oldReference = oldData;
             oldData = newData;
             newData = oldReference;

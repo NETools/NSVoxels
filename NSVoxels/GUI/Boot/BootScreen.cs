@@ -75,5 +75,10 @@ namespace NSVoxels.GUI.Boot
 
             checkBox1.Checked = true;
         }
+
+        private void checkBox2_CheckedChanged(object sender, EventArgs e)
+        {
+            PreStartSettings.UseDoubleBufferedVoxelData = checkBox2.Checked;
+        }
     }
 }

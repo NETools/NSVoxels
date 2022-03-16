@@ -24,8 +24,9 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.Simple
         public SimpleDynamicsBatch()
         {
             components = new List<DynamicVoxelComponent>();
-
-            simpleDynamicsEffect = Statics.Content.Load<Effect>("Dynamics\\Simple\\SimpleDynamicQuery");
+            if (PreStartSettings.UseDoubleBufferedVoxelData)
+                simpleDynamicsEffect = Statics.Content.Load<Effect>("Dynamics\\Simple\\SimpleDynamicQuery");
+            else simpleDynamicsEffect = Statics.Content.Load<Effect>("Dynamics\\NoDoubleBuffer\\SimpleDynamicQueryNoDoubleBuffer");
         }
 
         public void AddComponent(DynamicVoxelComponent component)
@@ -61,9 +62,15 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.Simple
         {
             simpleDynamicsEffect.Parameters["accelerationStructureBuffer"].SetValue(accelerator);
 
-            simpleDynamicsEffect.Parameters["voxelDataBufferOld"].SetValue(oldData);
-            simpleDynamicsEffect.Parameters["voxelDataBufferNew"].SetValue(newData);
-
+            if (PreStartSettings.UseDoubleBufferedVoxelData)
+            {
+                simpleDynamicsEffect.Parameters["voxelDataBufferOld"].SetValue(oldData);
+                simpleDynamicsEffect.Parameters["voxelDataBufferNew"].SetValue(newData);
+            }
+            else
+            {
+                simpleDynamicsEffect.Parameters["voxelDataBuffer"].SetValue(oldData);
+            }
 
             simpleDynamicsEffect.Techniques["AcceleratorTechnique"].Passes["GenerateOctree"].ApplyCompute();
             Statics.GraphicsDevice.DispatchCompute(numThreads, 1, 1);

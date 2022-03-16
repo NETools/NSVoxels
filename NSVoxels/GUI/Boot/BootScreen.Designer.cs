@@ -41,6 +41,7 @@ namespace NSVoxels.GUI.Boot
             this.comboBox2 = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
             this.comboBox1 = new System.Windows.Forms.ComboBox();
+            this.checkBox2 = new System.Windows.Forms.CheckBox();
             this.panel1.SuspendLayout();
             this.panel2.SuspendLayout();
             this.SuspendLayout();
@@ -71,6 +72,7 @@ namespace NSVoxels.GUI.Boot
             // panel2
             // 
             this.panel2.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.panel2.Controls.Add(this.checkBox2);
             this.panel2.Controls.Add(this.label4);
             this.panel2.Controls.Add(this.comboBox4);
             this.panel2.Controls.Add(this.label3);
@@ -82,7 +84,7 @@ namespace NSVoxels.GUI.Boot
             this.panel2.Controls.Add(this.comboBox1);
             this.panel2.Location = new System.Drawing.Point(7, 11);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(211, 316);
+            this.panel2.Size = new System.Drawing.Size(227, 316);
             this.panel2.TabIndex = 2;
             // 
             // label4
@@ -198,6 +200,18 @@ namespace NSVoxels.GUI.Boot
             this.comboBox1.TabIndex = 1;
             this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
             // 
+            // checkBox2
+            // 
+            this.checkBox2.AutoSize = true;
+            this.checkBox2.Font = new System.Drawing.Font("Calibri", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.checkBox2.Location = new System.Drawing.Point(85, 266);
+            this.checkBox2.Name = "checkBox2";
+            this.checkBox2.Size = new System.Drawing.Size(140, 40);
+            this.checkBox2.TabIndex = 10;
+            this.checkBox2.Text = "Doubled buffered \r\nvoxel data";
+            this.checkBox2.UseVisualStyleBackColor = true;
+            this.checkBox2.CheckedChanged += new System.EventHandler(this.checkBox2_CheckedChanged);
+            // 
             // BootScreen
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -232,5 +246,6 @@ namespace NSVoxels.GUI.Boot
         private System.Windows.Forms.ComboBox comboBox1;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.ComboBox comboBox4;
+        private System.Windows.Forms.CheckBox checkBox2;
     }
 }

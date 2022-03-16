@@ -15,5 +15,8 @@ namespace NSVoxels.Globals
         public static int MinimumAcceleratorNodeSize { get; set; }
 
         public static bool UseVSync { get; set; }
+
+
+        public static bool UseDoubleBufferedVoxelData { get; set; }
     }
 }

@@ -19,6 +19,12 @@
 /processorParam:DebugMode=Auto
 /build:Accelerator/AcceleratorGenerator.fx
 
+#begin Dynamics/NoDoubleBuffer/SimpleDynamicQueryNoDoubleBuffer.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Dynamics/NoDoubleBuffer/SimpleDynamicQueryNoDoubleBuffer.fx
+
 #begin Dynamics/Simple/SimpleDynamicQuery.fx
 /importer:EffectImporter
 /processor:EffectProcessor
