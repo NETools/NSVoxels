@@ -57,10 +57,12 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.Simple
         }
  
 
-        public void Update(Texture3D data, StructuredBuffer accelerator)
+        public void Update(Texture3D oldData, Texture3D newData, StructuredBuffer accelerator)
         {
             simpleDynamicsEffect.Parameters["accelerationStructureBuffer"].SetValue(accelerator);
-            simpleDynamicsEffect.Parameters["voxelDataBuffer"].SetValue(data);
+
+            simpleDynamicsEffect.Parameters["voxelDataBufferOld"].SetValue(oldData);
+            simpleDynamicsEffect.Parameters["voxelDataBufferNew"].SetValue(newData);
 
 
             simpleDynamicsEffect.Techniques["AcceleratorTechnique"].Passes["GenerateOctree"].ApplyCompute();

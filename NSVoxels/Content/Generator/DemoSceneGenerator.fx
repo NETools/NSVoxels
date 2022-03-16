@@ -87,7 +87,16 @@ float snoise01(float2 v)
 }
 
 
-RWTexture3D<float4> voxelDataBuffer;
+globallycoherent RWTexture3D<int> voxelDataBuffer;
+globallycoherent RWTexture3D<int> voxelDataBufferCopy;
+
+
+void setData(uint3 pixel, int data)
+{
+    voxelDataBuffer[pixel] = data;
+    voxelDataBufferCopy[pixel] = data;
+}
+
 [numthreads(GroupSize, GroupSize, GroupSize)]
 void CS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
             uint localIndex : SV_GroupIndex, uint3 globalID : SV_DispatchThreadID)
@@ -98,23 +107,24 @@ void CS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
     
     float3 dist = globalID - float3(256, 256, 256);
     if (dot(dist, dist) <= 60 * 60)
-        voxelDataBuffer[globalID] = float4(3 / 256.0f, 0, 0, 0);
+        setData(globalID, 3);
     else if (dot(dist, dist) >= 60 * 60 && dot(dist, dist) <= 64 * 64)
-        voxelDataBuffer[globalID] = float4(1 / 256.0f, 0, 0, 0);
+        setData(globalID, 1);
     
     else if (globalID.y <= noiseY - 5)
-        voxelDataBuffer[globalID] = float4(3 / 256.0f, 0, 0, 0);
+        setData(globalID, 3);
     else if (globalID.y >= noiseY - 5 && globalID.y <= noiseY)
-        voxelDataBuffer[globalID] = float4(6 / 256.0f, 0, 0, 0);
+        setData(globalID, 6);
     
     else if (globalID.x == 10 && globalID.y <= 200 && (globalID.z <= 200 || globalID.z >= 300))
-        voxelDataBuffer[globalID] = float4(4 / 256.0f, 0, 0, 0);
+        setData(globalID, 4);
+    
     else if (globalID.x == 10 && globalID.y <= 200 && !(globalID.z <= 200 || globalID.z >= 300))
-        voxelDataBuffer[globalID] = float4(2 / 256.0f, 1 / 256.0f, 0, 0);
+        setData(globalID, 2 | (1 << 8));
     else if (globalID.y == 200 && (globalID.x >= 50 && globalID.x <= 150 && globalID.z >= 230 && globalID.z <= 270))
-        voxelDataBuffer[globalID] = float4(2 / 256.0f, 1 / 256.0f, 0, 0);
+        setData(globalID, 2);
     else if (globalID.x == 190 && (globalID.y >= 50 && globalID.y <= 150 && globalID.z >= 230 && globalID.z <= 270))
-        voxelDataBuffer[globalID] = float4(2 / 256.0f, 1 / 256.0f, 0, 0);
+        setData(globalID, 2);
    
 }
 

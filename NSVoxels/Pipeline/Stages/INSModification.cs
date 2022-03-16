@@ -10,6 +10,6 @@ namespace NSVoxels.Pipeline.Stages
 {
     public interface INSModification
     {
-        void Update(Texture3D data, StructuredBuffer accelerator);
+        void Update(Texture3D oldData, Texture3D newData, StructuredBuffer accelerator);
     }
 }

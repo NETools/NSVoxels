@@ -27,6 +27,10 @@ uniform bool showReflection;
 uniform int reflectionMaxAcceleratorIterations;
 uniform int maxBounces;
 
+
+uniform bool showIterations;
+uniform float iterationScale;
+
 ///////////////////////////////////////////////////
 
 struct Voxel
@@ -36,18 +40,11 @@ struct Voxel
     bool isGlass;
 };
 
-uniform Texture3D<float4> voxelDataBuffer;
+uniform RWTexture3D<int> voxelDataBuffer;
 int getData(int3 position)
 {
     position = clamp(position, 0, volumeInitialSize);
-    int4 data = (int4) (voxelDataBuffer.Load(int4(position, 0)) * 255);
-     
-    int r = data.r;
-    int g = data.g;
-    int b = data.b;
-    int a = data.a;
-    
-    return r | (g << 8) | (b << 16) | (a << 24);
+    return voxelDataBuffer[position];
 }
 
 Voxel getVoxel(int packedVoxel)
@@ -570,13 +567,11 @@ float4 raytraceScene(Ray ray, out bool result)
     
     Voxel voxel = getVoxel(initialRaycastRslt.voxelDataPayload);
     
-    //finalColor = float4(initialRaycastRslt.iterations, initialRaycastRslt.iterations, initialRaycastRslt.iterations, 32) / 32.0f;
-    
-
-    finalColor = VoxelTextures.SampleLevel(
+    finalColor = float4(initialRaycastRslt.iterations, initialRaycastRslt.iterations, initialRaycastRslt.iterations, 1000000) * iterationScale * showIterations
+    + VoxelTextures.SampleLevel(
                                 voxelTexturesSampler,
                                 float3(getTextureCoordinate(initialRaycastRslt.hitPointF32, initialRaycastRslt.surfaceNormal) * oneOverVolumeInitialSize, voxel.data - 1),
-                                0);
+                                0) * !showIterations;
 
     
     if (showShadow)

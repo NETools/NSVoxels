@@ -77,6 +77,7 @@ namespace NSVoxels.Pipeline.Concrete.Accelerator
             acceleratorEffect.Parameters["voxelDataBuffer"].SetValue(data);
             acceleratorEffect.Techniques["AcceleratorTechnique"].Passes["GenerateOctree"].ApplyCompute();
             Statics.GraphicsDevice.DispatchCompute(dispatchCount, dispatchCount, dispatchCount);
+
             return octreeDataBuffer;
         }
 

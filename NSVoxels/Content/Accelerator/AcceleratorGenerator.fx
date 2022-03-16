@@ -6,21 +6,15 @@
 
 
 
-RWTexture3D<float4> voxelDataBuffer;
-globallycoherent RWStructuredBuffer<OctreeEntry>accelerationStructureBuffer;
+globallycoherent RWTexture3D<int> voxelDataBuffer;
+globallycoherent RWStructuredBuffer<OctreeEntry> accelerationStructureBuffer;
 
 int volumeInitialSize;
 int maxDepth; // is equivalent to maxIterations
 
 inline int getData(uint3 pixel)
 {
-    int4 data = voxelDataBuffer[pixel] * 255;
-    int r = data.r;
-    int g = data.g;
-    int b = data.b;
-    int a = data.a;
-    
-    return r | (g << 8) | (b << 16) | (a << 24);
+    return voxelDataBuffer[pixel];
 }
 
 uint calculateRelativeIndex(uint v, uint d)

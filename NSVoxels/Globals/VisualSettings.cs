@@ -23,6 +23,9 @@ namespace NSVoxels.Globals
         public static float ReflectionIterations;
         public static float MaxBounces;
 
+        public static bool ShowIterations;
+        public static float IterationScalingFactor;
+
 
 
 

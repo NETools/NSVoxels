@@ -17,7 +17,9 @@ struct OctreeEntry
     int hasData;
 };
 
-globallycoherent RWTexture3D<float4> voxelDataBuffer;
+globallycoherent RWTexture3D<int> voxelDataBufferOld;
+globallycoherent RWTexture3D<int> voxelDataBufferNew;
+
 globallycoherent RWStructuredBuffer<OctreeEntry> accelerationStructureBuffer;
 
 int volumeInitialSize;
@@ -25,20 +27,19 @@ int maxDepth; // is equivalent to maxIterations
 
 int getData(uint3 pixel)
 {
-    int4 data = voxelDataBuffer[pixel] * 255;
-    int r = data.r;
-    int g = data.g;
-    int b = data.b;
-    int a = data.a;
-    
-    return r | (g << 8) | (b << 16) | (a << 24);
+    return voxelDataBufferOld[pixel];
 }
 
-
-void setData(uint3 pixel, float4 data)
+void setData(uint3 pixel, int data)
 {
-    voxelDataBuffer[pixel] = data / 256.0f;
+    voxelDataBufferNew[pixel] = data;
 }
+
+void deleteData(uint3 pixel)
+{
+    voxelDataBufferOld[pixel] = 0;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 uint calculateRelativeIndex(uint v, uint d)
@@ -159,12 +160,13 @@ void CS(uint3 globalID : SV_DispatchThreadID)
     
     if (visitedOctants == 0) // DYNAMIC OBJECT INITIALIZATION
     {
-        setData(currentVoxelPosition, float4(1, 0, 0, 0)); // EXAMPLEDATA
         dynamicComponents[globalID.x].visitedOctants = getOctants(currentVoxelPosition);
             
         int currentVoxel = getData(currentVoxelPosition);
         if (currentVoxel == 0) // NO DATA YET, UPDATE OCTTREE
             addToOctree(currentVoxelPosition, 1);
+        
+        setData(currentVoxelPosition, 5); // EXAMPLEDATA
     }
     else
     {
@@ -176,8 +178,10 @@ void CS(uint3 globalID : SV_DispatchThreadID)
         
         
         if (!isInsideVolume(nextVoxelPosition, createAABB(float3(1, 1, 1), float3(511, 511, 511))))
+        {
+            dynamicComponents[globalID.x].direction = (float3) 0;
             return;
-        
+        }
         
         
         int nextToVisitOctants = getOctants(nextVoxelPosition);
@@ -188,9 +192,12 @@ void CS(uint3 globalID : SV_DispatchThreadID)
             updateOctree(visitedOctants, nextToVisitOctants);
         }
         
-        setData(currentVoxelPosition, float4(0, 0, 0, 0)); // DEBUG MODE
-        setData(nextVoxelPosition, float4(5, 0, 0, 0));
-
+       
+        deleteData(currentVoxelPosition);
+        setData(nextVoxelPosition, 5);
+   
+        
+        
         dynamicComponents[globalID.x].position = nextAbsolutePosition;
         
     }

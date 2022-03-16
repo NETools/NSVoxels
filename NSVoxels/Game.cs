@@ -70,7 +70,11 @@ namespace NSVoxels
             #region Macros
             MacroManager.GetDefault().DefineMacro(Keys.O, (a) => VisualSettings.ShowShadows = !VisualSettings.ShowShadows, true);
             MacroManager.GetDefault().DefineMacro(Keys.R, (a) => VisualSettings.ShowReflections = !VisualSettings.ShowReflections, true);
-            MacroManager.GetDefault().DefineMacro(Keys.P, (a) => RaycastingSettings.UseAccelerator = !RaycastingSettings.UseAccelerator, true);
+            MacroManager.GetDefault().DefineMacro(Keys.P, (a) =>
+            {
+                RaycastingSettings.UseAccelerator = !RaycastingSettings.UseAccelerator;
+                VisualSettings.IterationScalingFactor = RaycastingSettings.UseAccelerator ? (1.0f / 32.0f) : (1.0f / 1000.0f);
+            }, true);
             MacroManager.GetDefault().DefineMacro(Keys.M, (a) => VisualSettings.UseMedianFilter = !VisualSettings.UseMedianFilter, true);
 
 
@@ -142,12 +146,17 @@ namespace NSVoxels
             }, false);
             #endregion
 
-
+            MacroManager.GetDefault().DefineMacro(Keys.F5, (a) =>
+            {
+                VisualSettings.ShowIterations = !VisualSettings.ShowIterations;
+            }, true);
 
             MacroManager.GetDefault().DefineMacro(Keys.J, (a) =>
             {
                 renderPipeline.Update();
             }, false);
+
+            VisualSettings.IterationScalingFactor = RaycastingSettings.UseAccelerator ? (1.0f / 32.0f) : (1.0f / 1000.0f);
 
             renderPipeline = new NSRenderPipeline();
             renderPipeline.VoxelDataGenerator = new DemoSceneGeneration();

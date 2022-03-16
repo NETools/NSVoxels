@@ -117,7 +117,11 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
             acceleratedRaycasterEffect.Parameters["maxBounces"].SetValue((int)VisualSettings.MaxBounces);
 
             acceleratedRaycasterEffect.Parameters["maxRaycasterIterations"].SetValue((int)VisualSettings.MaxRaycastingIterations);
-            
+
+
+            acceleratedRaycasterEffect.Parameters["showIterations"].SetValue(VisualSettings.ShowIterations);
+            acceleratedRaycasterEffect.Parameters["iterationScale"].SetValue(VisualSettings.IterationScalingFactor);
+
             #endregion
 
             acceleratedRaycasterEffect.Parameters["accelerationStructureBuffer"].SetValue(accelerator);

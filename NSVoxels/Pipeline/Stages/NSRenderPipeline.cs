@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace NSVoxels.Pipeline.Stages
 {
-    public class NSRenderPipeline
+    public unsafe class NSRenderPipeline
     {
         public INStart VoxelDataGenerator { get; set; }
         public INSAccelerator AcceleratorStructureGenerator { get; set; }
@@ -19,7 +19,9 @@ namespace NSVoxels.Pipeline.Stages
 
         private bool isStarted;
 
-        private Texture3D data;
+        private Texture3D oldData;
+        private Texture3D newData;
+
         private StructuredBuffer accelerator;
 
         public void Start()
@@ -29,24 +31,31 @@ namespace NSVoxels.Pipeline.Stages
 
             isStarted = true;
 
-            data = VoxelDataGenerator.Begin();
+            var fullData = VoxelDataGenerator.Begin();
+
+            oldData = fullData.Item1;
+            newData = fullData.Item2;
 
             AcceleratorStructureGenerator.Load();
-            accelerator = AcceleratorStructureGenerator.Create(data);
+            accelerator = AcceleratorStructureGenerator.Create(newData);
 
             Raytracer.Load();   
         }
 
         public void Update()
         {
-            Modification.Update(data, accelerator);
+            var oldReference = oldData;
+            oldData = newData;
+            newData = oldReference;
+
+            Modification.Update(oldData, newData, accelerator);
         }
 
         public void Draw()
         {
             if (Raytracer == null) return;
 
-            var result = Raytracer.Calculate(data, accelerator);
+            var result = Raytracer.Calculate(newData, accelerator);
             PostProcessingFilter.End(result);
 
         }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 using NSVoxels.Pipeline.Stages;
+using NSVoxels.Pipeline.Stages.Dynamics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,11 +11,11 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.Simple
 {
     public class SimpleDynamicsQuery : INSModification
     {
-        private List<SimpleDynamicsBatch> dynamicBatches;
+        private List<INSDynamicsBatch> dynamicBatches;
 
         public SimpleDynamicsQuery()
         {
-            dynamicBatches = new List<SimpleDynamicsBatch>();
+            dynamicBatches = new List<INSDynamicsBatch>();
         }
 
         public void AddBatch(SimpleDynamicsBatch batch)
@@ -22,12 +23,12 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.Simple
             this.dynamicBatches.Add(batch);
         }
 
-        public void Update(Texture3D data, StructuredBuffer accelerator)
+        public void Update(Texture3D oldData, Texture3D newData, StructuredBuffer accelerator)
         {
             for (int i = 0; i < dynamicBatches.Count; i++)
             {
-                SimpleDynamicsBatch currentBatch = dynamicBatches[i];
-                currentBatch.Update(data, accelerator);
+                var currentBatch = dynamicBatches[i];
+                currentBatch.Update(oldData, newData, accelerator);
             }
         }
     }
