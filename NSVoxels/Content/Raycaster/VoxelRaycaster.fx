@@ -275,11 +275,11 @@ bool arrayRayHit(in Ray ray,
 RaytracingResult acceleratedVolumeRayTest(Ray ray, int maxIterations)
 {
     // REGISTERS
-    int skipListPerDepth[4];
-    int parentListPerDepth[4];
-    float3 positionListPerDepth[4];
+    int skipListPerDepth[5];
+    int parentListPerDepth[5];
+    float3 positionListPerDepth[5];
     
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 5; i++)
         skipListPerDepth[i] = 0;
     
     
