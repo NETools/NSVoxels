@@ -12,8 +12,6 @@ namespace NSVoxels.Globals
         public static Vector3 LighPostion0 = new Vector3(256, 1_000, 256);
         public static float AngleLightPosition0;
 
-        public static float MaxRaycastingIterations;
-
         public static bool UseMedianFilter;
         
         public static bool ShowShadows;
@@ -26,8 +24,6 @@ namespace NSVoxels.Globals
         public static bool ShowIterations;
         public static float IterationScalingFactor;
 
-
-
-
+        public static bool CalculateIndirectLightning;
     }
 }

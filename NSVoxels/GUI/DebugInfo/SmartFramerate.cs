@@ -23,16 +23,47 @@ namespace NSVoxels.GUI.DebugInfo
             }
         }
 
+        private double samples;
+        private double fpsAccumulator;
+
+        private double fpsMax;
+        private double fpsMin;
+
+        public double Average { get { return fpsAccumulator / samples; } }
+        public double MinFps { get { return fpsMin; } }
+        public double MaxFps { get { return fpsMax; } }
+
         public SmartFramerate(int oldFrameWeight)
         {
             numerator = oldFrameWeight;
             weight = (double)oldFrameWeight / ((double)oldFrameWeight - 1d);
+
+            fpsMax = double.MinValue;
+            fpsMin = double.MaxValue;
+        }
+
+
+        public void Reset()
+        {
+            fpsMax = double.MinValue;
+            fpsMin = double.MaxValue;
+
+            samples = 0;
+            fpsAccumulator = 0;
         }
 
         public void Update(double timeSinceLastFrame)
         {
             currentFrametimes = currentFrametimes / weight;
             currentFrametimes += timeSinceLastFrame;
+
+            double currentFps = framerate;
+
+            fpsMin = Math.Min(fpsMin, currentFps);
+            fpsMax = Math.Max(fpsMax, currentFps);
+
+            samples++;
+            fpsAccumulator += currentFps;
         }
     }
 }

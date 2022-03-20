@@ -6,6 +6,7 @@ using NSVoxels.GUI.Macros;
 using NSVoxels.Interactive;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,6 +31,33 @@ namespace NSVoxels.GUI.DebugInfo
 
             MacroManager.GetDefault().DefineMacro(Keys.F3, (a) => showDebugInformation = !showDebugInformation, true);
             MacroManager.GetDefault().DefineMacro(Keys.F4, (a) => showContols = !showContols, true);
+
+
+            MacroManager.GetDefault().DefineMacro(Keys.F10, (a) => smartFPS.Reset(), true);
+
+            MacroManager.GetDefault().DefineMacro(Keys.F12, (a) =>
+            {
+
+                StringBuilder sb = new StringBuilder(".... STATS ....");
+                sb.AppendLine("");
+
+                sb.AppendLine("--- PROFILE ---");
+                sb.AppendLine("ACCELERATOR: " + RaycastingSettings.UseAccelerator);
+
+                sb.AppendLine("REFLECTION: " + VisualSettings.ShowReflections);
+                sb.AppendLine("SHADOW: " + VisualSettings.ShowShadows);
+
+                sb.AppendLine("REFLECTION + SHADOWS: " + (VisualSettings.ReflectionIterations > 10));
+
+                sb.AppendLine("--- PERFORMANCE ---");
+                sb.AppendLine("FPS AVG: " + smartFPS.Average);
+                sb.AppendLine("FPS MIN: " + smartFPS.MinFps);
+                sb.AppendLine("FPS MAX: " + smartFPS.MaxFps);
+
+
+                File.WriteAllText(Statics.Random.Next(0, 10000) + ".txt", sb.ToString());
+
+            }, true);
         }
 
         private static DebugPrinter debugPrinter;
@@ -53,13 +81,15 @@ namespace NSVoxels.GUI.DebugInfo
             if ((!showContols && PreStartSettings.ResolutionIndex < 2) || PreStartSettings.ResolutionIndex == 2)
             {
                 debugBuilder.AppendLine("FPS: " + Math.Round(smartFPS.framerate));
+                debugBuilder.AppendLine("FPS MIN: " + Math.Round(smartFPS.MinFps));
+                debugBuilder.AppendLine("FPS MAX: " + Math.Round(smartFPS.MaxFps));
+                debugBuilder.AppendLine("FPS AVG: " + Math.Round(smartFPS.Average));
+
+
+                debugBuilder.AppendLine("");
                 debugBuilder.AppendLine("VSync: " + PreStartSettings.UseVSync);
 
                 debugBuilder.AppendLine("");
-                debugBuilder.AppendLine("Render iterations: " + (int)VisualSettings.MaxRaycastingIterations);
-                debugBuilder.AppendLine("");
-
-
                 debugBuilder.AppendLine("Camera position: " + YawPitchCamera.CameraPosition);
                 debugBuilder.AppendLine("FoV: " + RaycastingSettings.FOV);
 
@@ -83,8 +113,11 @@ namespace NSVoxels.GUI.DebugInfo
                 debugBuilder.AppendLine("Max reflection bounces: " + (int)VisualSettings.MaxBounces);
 
                 debugBuilder.AppendLine("");
-
                 debugBuilder.AppendLine("Light angle: " + VisualSettings.AngleLightPosition0);
+
+
+                debugBuilder.AppendLine("");
+                debugBuilder.AppendLine("Calculate indirect lightning: " + VisualSettings.CalculateIndirectLightning);
             }
 
             if (!showContols)

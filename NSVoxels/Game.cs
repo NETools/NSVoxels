@@ -73,7 +73,7 @@ namespace NSVoxels
             MacroManager.GetDefault().DefineMacro(Keys.P, (a) =>
             {
                 RaycastingSettings.UseAccelerator = !RaycastingSettings.UseAccelerator;
-                VisualSettings.IterationScalingFactor = RaycastingSettings.UseAccelerator ? (1.0f / 32.0f) : (1.0f / 1000.0f);
+                VisualSettings.IterationScalingFactor = RaycastingSettings.UseAccelerator ? (1.0f / 300.0f) : (1.0f / 1000.0f);
             }, true);
             MacroManager.GetDefault().DefineMacro(Keys.M, (a) => VisualSettings.UseMedianFilter = !VisualSettings.UseMedianFilter, true);
 
@@ -135,15 +135,10 @@ namespace NSVoxels
             }, false);
 
 
-            MacroManager.GetDefault().DefineMacro(Keys.K, (a) =>
+            MacroManager.GetDefault().DefineMacro(Keys.I, (a) =>
             {
-                VisualSettings.MaxRaycastingIterations -= (float)(adjustSpeed * a.ElapsedGameTime.TotalSeconds);
-
-            }, false);
-            MacroManager.GetDefault().DefineMacro(Keys.L, (a) =>
-            {
-                VisualSettings.MaxRaycastingIterations += (float)(adjustSpeed * a.ElapsedGameTime.TotalSeconds);
-            }, false);
+                VisualSettings.CalculateIndirectLightning = !VisualSettings.CalculateIndirectLightning;
+            }, true);
             #endregion
 
             MacroManager.GetDefault().DefineMacro(Keys.F5, (a) =>
@@ -156,7 +151,7 @@ namespace NSVoxels
                 renderPipeline.Update();
             }, false);
 
-            VisualSettings.IterationScalingFactor = RaycastingSettings.UseAccelerator ? (1.0f / 32.0f) : (1.0f / 1000.0f);
+            VisualSettings.IterationScalingFactor = RaycastingSettings.UseAccelerator ? (1.0f / 300.0f) : (1.0f / 1000.0f);
 
             renderPipeline = new NSRenderPipeline();
             renderPipeline.VoxelDataGenerator = new DemoSceneGeneration();

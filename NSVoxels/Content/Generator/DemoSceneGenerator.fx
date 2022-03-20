@@ -122,9 +122,9 @@ void CS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
     else if (globalID.x == 10 && globalID.y <= 200 && !(globalID.z <= 200 || globalID.z >= 300))
         setData(globalID, 2 | (1 << 8));
     else if (globalID.y == 200 && (globalID.x >= 50 && globalID.x <= 150 && globalID.z >= 230 && globalID.z <= 270))
-        setData(globalID, 2);
+        setData(globalID, 2 | (1 << 8));
     else if (globalID.x == 190 && (globalID.y >= 50 && globalID.y <= 150 && globalID.z >= 230 && globalID.z <= 270))
-        setData(globalID, 2);
+        setData(globalID, 2 | (1 << 8));
    
 }
 
