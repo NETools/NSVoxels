@@ -14,7 +14,6 @@ uniform RWTexture2D<float4> backBuffer;
 uniform float4x4 cameraRotation;
 uniform float3 cameraPosition;
 
-
 uniform float3 lightPosition0;
 
 uniform bool useAccelerator;
@@ -26,26 +25,27 @@ uniform bool showReflection;
 uniform int reflectionMaxAcceleratorIterations;
 uniform int maxBounces;
 
+
+uniform bool showIterations;
+uniform float iterationScale;
+
+uniform bool calculateIndirectLightning;
+
+
 ///////////////////////////////////////////////////
 
 struct Voxel
 {
     int data;
     bool isReflectable;
+    bool isGlass;
 };
 
-uniform Texture3D<float4> voxelDataBuffer;
+uniform RWTexture3D<int> voxelDataBuffer;
 int getData(int3 position)
 {
     position = clamp(position, 0, volumeInitialSize);
-    int4 data = (int4) (voxelDataBuffer.Load(int4(position, 0)) * 255);
-     
-    int r = data.r;
-    int g = data.g;
-    int b = data.b;
-    int a = data.a;
-    
-    return r | (g << 8) | (b << 16) | (a << 24);
+    return voxelDataBuffer[position];
 }
 
 Voxel getVoxel(int packedVoxel)
@@ -53,6 +53,7 @@ Voxel getVoxel(int packedVoxel)
     Voxel voxel = (Voxel) 0;
     voxel.data = packedVoxel & 0xff;
     voxel.isReflectable = packedVoxel & (1 << 8);
+    voxel.isGlass = packedVoxel & (1 << 9);
     
     return voxel;
 }
@@ -89,7 +90,7 @@ struct OctreeData
     int childStartIndex;
     int childrenCount;
 };
-uniform RWStructuredBuffer<OctreeData> accelerationStructureBuffer;
+globallycoherent RWStructuredBuffer<OctreeData> accelerationStructureBuffer;
 uniform Texture2D<float4> octantVectorLookUp;
 
 struct InterimOctreeData
@@ -103,7 +104,7 @@ struct InterimOctreeData
     bool isNull;
 };
 
-struct AcceleratorResult
+struct RaytracingResult
 {
     int voxelDataPayload;
     
@@ -115,6 +116,7 @@ struct AcceleratorResult
     
     AABB aabb;
     
+    int iterations;
     bool isNull;
 };
 ///////////////////////////////////////////////////
@@ -183,17 +185,17 @@ bool isInsideVolume(float3 position, AABB aabb)
 }
 ///////////////////////////////////////////////////
 
+///
 
-
-///////////////////////////////////////////////////
 bool arrayRayHit(in Ray ray,
                  in AABB volume,
+                 in bool excludeGlass,
                  out float depth,
                  out float3 hitPointF32,
                  out float3 hitPointI32,
                  out float3 normal,
                  out int voxelData,
-                 out AABB voxelAABB)
+                 out AABB voxelAABB, out int iterations)
 {
     
     volume.center = max(volume.center - 1, 0);
@@ -219,6 +221,94 @@ bool arrayRayHit(in Ray ray,
         return false;
         
     float maximumDepth = lambdaMax;
+  
+    bool isOriginInside = !isInsideVolume(ray.origin, arrayCube);
+    
+    float3 floatPosition3 = ray.origin + lambdaMin * ray.dir * isOriginInside;
+    float3 intPosition3 = floor(floatPosition3);
+        
+    float3 offset = saturate(intPosition3 - floor(floatPosition3 + 0.01f));
+    intPosition3 -= offset;
+        
+    float3 pstvDirComps = saturate(sgnsPerComps);
+    float3 ngtvDirComps = 1 - pstvDirComps;
+    
+    AABB nextVoxel = createAABB(intPosition3, float3(1, 1, 1));
+        
+    minCorner = lessThanZero * nextVoxel.maxSize;
+    maxCorner = biggerThanZero * nextVoxel.maxSize;
+    
+    int currentData = 0;
+    [loop]
+    while (checkHit(ray, nextVoxel, sgnsPerComps, minCorner, maxCorner, lambdaMin, lambdaMax, sideMin, sideMax)
+                      & (((currentData == 0) || (currentData >> 9) & 1 == 1))
+                      & (maximumDepth - lambdaMin >= 1))
+    {
+        floatPosition3 = ray.origin + lambdaMax * ray.dir;
+        intPosition3 = floor(floatPosition3);
+         
+        float3 rightRnddComps = (intPosition3 - floor(floatPosition3 + 0.01f)) + 1.0f; // is equivalent to: >= 0
+        float3 wrongRnddComps = 1 - rightRnddComps;
+
+        offset = sideMax * ((pstvDirComps * wrongRnddComps) + (ngtvDirComps * rightRnddComps));
+        intPosition3 += offset;
+            
+        normal = -sideMax;
+
+        currentData = getData(intPosition3);
+        nextVoxel.center = intPosition3;
+            
+        depth = lambdaMax;
+        iterations++;
+
+    }
+    
+    
+    voxelData = currentData;
+    hitPointF32 = floatPosition3;
+    hitPointI32 = intPosition3;
+    voxelAABB = nextVoxel;
+    
+    return voxelData > 0;
+}
+
+///
+
+///////////////////////////////////////////////////
+bool arrayRayHit(in Ray ray,
+                 in AABB volume,
+                 out float depth,
+                 out float3 hitPointF32,
+                 out float3 hitPointI32,
+                 out float3 normal,
+                 out int voxelData,
+                 out AABB voxelAABB, out int iterations)
+{
+    
+    volume.center = max(volume.center - 1, 0);
+    volume.maxSize = min(volume.maxSize + 2, volumeInitialSize);
+    
+    AABB arrayCube = volume;
+    
+    float lambdaMin = 0;
+    float lambdaMax = 0;
+    
+    float3 sideMin = (float3) 0;
+    float3 sideMax = (float3) 0;
+    
+    float3 biggerThanZero = ray.dirRcp > 0;
+    float3 lessThanZero = 1.0f - biggerThanZero;
+    
+    float3 sgnsPerComps = biggerThanZero - lessThanZero; // alternative: sign(ray.dir);
+    
+    float3 minCorner = lessThanZero * arrayCube.maxSize;
+    float3 maxCorner = biggerThanZero * arrayCube.maxSize;
+    bool initialHitStatus = checkHit(ray, arrayCube, sgnsPerComps, minCorner, maxCorner, lambdaMin, lambdaMax, sideMin, sideMax);
+    if (((lambdaMin < 0) & (lambdaMax < 0)) | !initialHitStatus)
+        return false;
+        
+    float maximumDepth = lambdaMax;
+    
         
     bool isOriginInside = !isInsideVolume(ray.origin, arrayCube);
     
@@ -257,6 +347,8 @@ bool arrayRayHit(in Ray ray,
         nextVoxel.center = intPosition3;
             
         depth = lambdaMax;
+        iterations++;
+
     }
     
     
@@ -267,14 +359,14 @@ bool arrayRayHit(in Ray ray,
     
     return voxelData > 0;
 }
-AcceleratorResult acceleratedVolumeRayTest(Ray ray, int maxIterations)
+RaytracingResult acceleratedVolumeRayTest(Ray ray, int maxIterations)
 {
     // REGISTERS
-    int skipListPerDepth[4];
-    int parentListPerDepth[4];
-    float3 positionListPerDepth[4];
+    int skipListPerDepth[5];
+    int parentListPerDepth[5];
+    float3 positionListPerDepth[5];
     
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 5; i++)
         skipListPerDepth[i] = 0;
     
     
@@ -286,7 +378,7 @@ AcceleratorResult acceleratedVolumeRayTest(Ray ray, int maxIterations)
     parent.currentSize = volumeInitialSize;
     
      // RETURN VALUE
-    AcceleratorResult finalResult = (AcceleratorResult) 0;
+    RaytracingResult finalResult = (RaytracingResult) 0;
     finalResult.isNull = true;
     
     AABB rootVolume = createAABB(parent.currentPosition, float3(1, 1, 1) * parent.currentSize);
@@ -305,8 +397,10 @@ AcceleratorResult acceleratedVolumeRayTest(Ray ray, int maxIterations)
         int currentIndex = 0;
         bool voxelFound = false;
         
+        int iterations = 0;
+        int additionalIterations = 0;
         [loop]
-        for (int iterations = 0; iterations <= maxIterations; iterations++)
+        for (iterations = 0; iterations <= maxIterations; iterations++)
         {
             int childStartIndex = parent.octreeData.childStartIndex;
             
@@ -350,8 +444,10 @@ AcceleratorResult acceleratedVolumeRayTest(Ray ray, int maxIterations)
                         float3 normal = (float3) 0;
                         AABB voxelAABB = (AABB) 0;
                         int voxelData = 0;
+                        int traversalIterations = 0;
+                        bool result = arrayRayHit(ray, childVoxel, depth, hitPoint, hitPointInt, normal, voxelData, voxelAABB, traversalIterations);
                         
-                        bool result = arrayRayHit(ray, childVoxel, depth, hitPoint, hitPointInt, normal, voxelData, voxelAABB);
+                        additionalIterations += traversalIterations;
                         
                         if (result)
                         {
@@ -361,7 +457,7 @@ AcceleratorResult acceleratedVolumeRayTest(Ray ray, int maxIterations)
                             {
                                 minDistToVoxel = lambdaMin;
                                 
-                                AcceleratorResult result = (AcceleratorResult) 0;
+                                RaytracingResult result = (RaytracingResult) 0;
                                 result.voxelDataPayload = voxelData;
                                 result.hitPointF32 = hitPoint;
                                 result.hitPointI32 = hitPointInt;
@@ -420,7 +516,8 @@ AcceleratorResult acceleratedVolumeRayTest(Ray ray, int maxIterations)
             currentIndex = nextIndex;
         }
         
-        
+        iterations += additionalIterations;
+        finalResult.iterations = iterations;
     }
     return finalResult;
 }
@@ -447,12 +544,135 @@ sampler voxelTexturesSampler = sampler_state
 };
 
 
+RaytracingResult volumeRayTest(Ray ray, int maxIterations)
+{
+    if (useAccelerator)
+        return acceleratedVolumeRayTest(ray, maxIterations);
+    
+ 
+    float depth = 0;
+    float3 hitPoint = (float3) 0;
+    float3 hitPointInt = (float3) 0;
+    float3 normal = (float3) 0;
+    AABB voxelAABB = (AABB) 0;
+    int voxelData = 0;
+    int iterations = 0;
+                        
+    bool result = arrayRayHit(
+                        ray,
+                        createAABB(float3(0, 0, 0), float3(volumeInitialSize, volumeInitialSize, volumeInitialSize)),
+                        depth,
+                        hitPoint,
+                        hitPointInt,
+                        normal,
+                        voxelData,
+                        voxelAABB, iterations);
+        
+    RaytracingResult rtrcRslt = (RaytracingResult) 0;
+        
+    rtrcRslt.voxelDataPayload = voxelData;
+    rtrcRslt.hitPointF32 = hitPoint;
+    rtrcRslt.hitPointI32 = hitPointInt;
+    rtrcRslt.surfaceNormal = normal;
+    rtrcRslt.depth = depth;
+    rtrcRslt.aabb = voxelAABB;
+    
+    rtrcRslt.iterations = iterations;
+    rtrcRslt.isNull = !result;
+        
+    return rtrcRslt;
+    
+}
 
-float4 acceleratedSubroutine(Ray ray, out bool result)
+float4 calculateShadow(RaytracingResult rtrslt, float4 currentColor, bool isInShadow)
+{
+    float3 lightVoxelDirection = normalize(lightPosition0 - rtrslt.hitPointF32);
+    float3 shadowCastOrigin = rtrslt.hitPointF32;
+        
+    Ray shadowRay = (Ray) 0;
+    shadowRay.dir = lightVoxelDirection;
+    shadowRay.dirRcp = rcp(shadowRay.dir);
+    shadowRay.origin = shadowCastOrigin + rtrslt.surfaceNormal * .1f;
+        
+    RaytracingResult shadowRaycastRslt = volumeRayTest(shadowRay, shadowMaxAcceleratorIterations);
+    currentColor.rgb *= !shadowRaycastRslt.isNull * 0.2f + (1.0f - !shadowRaycastRslt.isNull);
+    
+    isInShadow = !shadowRaycastRslt.isNull;
+    
+    return currentColor;
+}
+
+// ONLY PROOF OF CONCEPT
+float4 calculateTransparency(Ray ray, RaytracingResult rtrslt, float4 currentColor)
+{
+    int3 biggerThanZeroA = ray.dirRcp > 0;
+    int3 lessThanZeroA = 1.0f - biggerThanZeroA;
+    
+    float3 minCornerA = lessThanZeroA * rtrslt.aabb.maxSize;
+    float3 maxCornerA = biggerThanZeroA * rtrslt.aabb.maxSize;
+    
+    float3 sgnsPerCompsA = biggerThanZeroA - lessThanZeroA;
+    
+    float lambdaMinA = 0;
+    float lambdaMaxA = 0;
+    
+    float3 sideMinA = (float3) 0;
+    float3 sideMaxA = (float3) 0;
+    
+    bool b = checkHit(ray, rtrslt.aabb, sgnsPerCompsA, minCornerA, maxCornerA, lambdaMinA, lambdaMaxA, sideMinA, sideMaxA);
+    
+    
+    float3 rayExitPoint = ray.origin + ray.dir * (lambdaMaxA + 0.1);
+    float3 refractedDir = refract(ray.dir, rtrslt.surfaceNormal, 1.5f);
+    
+    Ray propagatedRay = (Ray) 0;
+    propagatedRay.origin = rayExitPoint;
+    propagatedRay.dir = refractedDir;
+    propagatedRay.dirRcp = rcp(propagatedRay.dir);
+    
+    /*
+    RaytracingResult rslt = volumeRayTest(propagatedRay, 64);
+    */
+    
+    float depth = 0;
+    float3 hitPoint = (float3) 0;
+    float3 hitPointInt = (float3) 0;
+    float3 normal = (float3) 0;
+    AABB voxelAABB = (AABB) 0;
+    int voxelData = 0;
+    int iterations = 0;
+                        
+    bool result = arrayRayHit(
+                        propagatedRay,
+                        createAABB(float3(0, 0, 0), float3(volumeInitialSize, volumeInitialSize, volumeInitialSize)), true,
+                        depth,
+                        hitPoint,
+                        hitPointInt,
+                        normal,
+                        voxelData,
+                        voxelAABB, iterations);
+    
+    
+    if (result)
+    {
+        Voxel appearingVoxel = getVoxel(voxelData);
+        float4 appearingVoxelColor = VoxelTextures.SampleLevel(
+                                voxelTexturesSampler,
+                                float3(getTextureCoordinate(hitPoint, normal) * oneOverVolumeInitialSize, appearingVoxel.data - 1),
+                                0);
+        
+        currentColor.rgb = appearingVoxelColor.rgb;
+    }
+ 
+    
+    return currentColor;
+}
+
+float4 raytraceScene(Ray ray, out bool result)
 {
     float4 finalColor = (float4) 0;
     
-    AcceleratorResult initialRaycastRslt = acceleratedVolumeRayTest(ray, 64);
+    RaytracingResult initialRaycastRslt = volumeRayTest(ray, 64);
     if (initialRaycastRslt.isNull)
     {
         result = false;
@@ -461,24 +681,16 @@ float4 acceleratedSubroutine(Ray ray, out bool result)
     
     Voxel voxel = getVoxel(initialRaycastRslt.voxelDataPayload);
     
-    finalColor = VoxelTextures.SampleLevel(
+    finalColor = float4(initialRaycastRslt.iterations, initialRaycastRslt.iterations, initialRaycastRslt.iterations, 1000000) * iterationScale * showIterations
+    + VoxelTextures.SampleLevel(
                                 voxelTexturesSampler,
                                 float3(getTextureCoordinate(initialRaycastRslt.hitPointF32, initialRaycastRslt.surfaceNormal) * oneOverVolumeInitialSize, voxel.data - 1),
-                                0);
+                                0) * !showIterations;
+
     
+    bool liesInShadow = false;
     if (showShadow)
-    {
-        float3 lightVoxelDirection = normalize(lightPosition0 - initialRaycastRslt.hitPointF32);
-        float3 shadowCastOrigin = initialRaycastRslt.hitPointF32;
-        
-        Ray shadowRay = (Ray) 0;
-        shadowRay.dir = lightVoxelDirection;
-        shadowRay.dirRcp = rcp(shadowRay.dir);
-        shadowRay.origin = shadowCastOrigin + initialRaycastRslt.surfaceNormal * .1f;
-        
-        AcceleratorResult shadowRaycastRslt = acceleratedVolumeRayTest(shadowRay, shadowMaxAcceleratorIterations);
-        finalColor.rgb *= !shadowRaycastRslt.isNull * 0.2f + (1.0f - !shadowRaycastRslt.isNull);
-    }
+        finalColor = calculateShadow(initialRaycastRslt, finalColor, liesInShadow);
     
     if (showReflection & voxel.isReflectable)
     {
@@ -487,71 +699,89 @@ float4 acceleratedSubroutine(Ray ray, out bool result)
         reflectionRay.dirRcp = rcp(reflectionRay.dir);
         reflectionRay.origin = initialRaycastRslt.hitPointF32 + initialRaycastRslt.surfaceNormal * .1f;
         
-        AcceleratorResult reflectionRaycastRslt = acceleratedVolumeRayTest(reflectionRay, reflectionMaxAcceleratorIterations);
+        RaytracingResult reflectionRaycastRslt = volumeRayTest(reflectionRay, reflectionMaxAcceleratorIterations);
+        if (!reflectionRaycastRslt.isNull)
+        {
+            Voxel reflectedVoxel = getVoxel(reflectionRaycastRslt.voxelDataPayload);
         
-        Voxel reflectedVoxel = getVoxel(reflectionRaycastRslt.voxelDataPayload);
-        
-        float4 reflectedEntityColor =
+            float4 reflectedEntityColor =
                                 VoxelTextures.SampleLevel(
                                 voxelTexturesSampler,
                                 float3(getTextureCoordinate(reflectionRaycastRslt.hitPointF32, reflectionRaycastRslt.surfaceNormal) * oneOverVolumeInitialSize, reflectedVoxel.data - 1),
                                 0);
  
-        for (int i = 0; i < maxBounces; i++)
-        {
-            float3 lightReflectedVoxelDirection = normalize(lightPosition0 - reflectionRaycastRslt.hitPointF32);
-            float3 shadowCastOriginRefl = reflectionRaycastRslt.hitPointF32;
-        
-            if (showShadow)
+            for (int i = 0; i < maxBounces; i++)
             {
-                Ray reflectedShadowRay = (Ray) 0;
-                reflectedShadowRay.dir = lightReflectedVoxelDirection;
-                reflectedShadowRay.dirRcp = rcp(reflectedShadowRay.dir);
-                reflectedShadowRay.origin = shadowCastOriginRefl + reflectionRaycastRslt.surfaceNormal * .1f;
+                float3 lightReflectedVoxelDirection = normalize(lightPosition0 - reflectionRaycastRslt.hitPointF32);
+                float3 shadowCastOriginRefl = reflectionRaycastRslt.hitPointF32;
         
-                AcceleratorResult reflectionShadowRaycastRslt =
-                                            acceleratedVolumeRayTest(reflectedShadowRay, shadowMaxAcceleratorIterations);
+                bool dummy = false;
+                if (showShadow)
+                    reflectedEntityColor = calculateShadow(reflectionRaycastRslt, reflectedEntityColor, dummy);
             
-                reflectedEntityColor.rgb *= !reflectionShadowRaycastRslt.isNull * 0.2f + (1.0f - !reflectionShadowRaycastRslt.isNull);
-            }
-            
-            if (reflectedVoxel.isReflectable)
-            {
-                reflectionRay.dir = reflect(reflectionRay.dir, reflectionRaycastRslt.surfaceNormal);
-                reflectionRay.dirRcp = rcp(reflectionRay.dir);
-                reflectionRay.origin = reflectionRaycastRslt.hitPointF32 + reflectionRaycastRslt.surfaceNormal * .1f;
+                if (reflectedVoxel.isReflectable)
+                {
+                    reflectionRay.dir = reflect(reflectionRay.dir, reflectionRaycastRslt.surfaceNormal);
+                    reflectionRay.dirRcp = rcp(reflectionRay.dir);
+                    reflectionRay.origin = reflectionRaycastRslt.hitPointF32 + reflectionRaycastRslt.surfaceNormal * .1f;
         
-                reflectionRaycastRslt = acceleratedVolumeRayTest(reflectionRay, reflectionMaxAcceleratorIterations);
-                reflectedVoxel = getVoxel(reflectionRaycastRslt.voxelDataPayload);
+                    reflectionRaycastRslt = volumeRayTest(reflectionRay, reflectionMaxAcceleratorIterations);
+                 
+                    reflectedVoxel = getVoxel(reflectionRaycastRslt.voxelDataPayload);
         
-                reflectedEntityColor = reflectedEntityColor * 0.55 +
+                    reflectedEntityColor = reflectedEntityColor * 0.55 +
                                 0.45 * VoxelTextures.SampleLevel(
                                 voxelTexturesSampler,
                                 float3(getTextureCoordinate(reflectionRaycastRslt.hitPointF32, reflectionRaycastRslt.surfaceNormal) * oneOverVolumeInitialSize, reflectedVoxel.data - 1),
-                                0);
-                
+                                0) * !reflectionRaycastRslt.isNull + float4(0.39, 0.58, 0.93, 1) * reflectionRaycastRslt.isNull;
+                    
+                    
+                    
+                }
+                else
+                    break;
             }
-            else
-                break;
-        }
         
-        finalColor = finalColor * 0.55 + 0.45 * reflectedEntityColor;
-
+            finalColor = finalColor * 0.55 + 0.45 * reflectedEntityColor;
+        }
+        else
+            finalColor = float4(0.39, 0.58, 0.93, 1);
     }
+    
+    /*
+    if (voxel.isReflectable & calculateIndirectLightning & !liesInShadow)
+    {
+        float3 sunReflectorDir = normalize(initialRaycastRslt.hitPointF32 - lightPosition0);
+        float3 reflectedSunReflectorDir = reflect(sunReflectorDir, initialRaycastRslt.surfaceNormal);
+        
+        
+        Ray reflectionRay = (Ray) 0;
+        reflectionRay.dir = reflectedSunReflectorDir;
+        reflectionRay.dirRcp = rcp(reflectionRay.dir);
+        reflectionRay.origin = initialRaycastRslt.hitPointF32 + initialRaycastRslt.surfaceNormal * .1f;
+        
+        RaytracingResult reflectionRaycastRslt = volumeRayTest(reflectionRay, reflectionMaxAcceleratorIterations);
+        Voxel v = getVoxel(reflectionRaycastRslt.voxelDataPayload);
+        
+        if (!reflectionRaycastRslt.isNull && !v.isReflectable)
+            voxelDataBuffer[reflectionRaycastRslt.hitPointI32] = reflectionRaycastRslt.voxelDataPayload | (1 << 28);
+        
+    }
+    if ((initialRaycastRslt.voxelDataPayload >> 28) & 1 == 1)
+    {
+        finalColor *= 2.5f;
+        //voxelDataBuffer[initialRaycastRslt.hitPointI32] = initialRaycastRslt.voxelDataPayload & (~(1 << 28));
+    }
+    */
+    
+    if (voxel.isGlass)
+        finalColor = calculateTransparency(ray, initialRaycastRslt, finalColor);
     
     
     result = true;
     return finalColor;
     
 }
-
-float4 nonOptimizedSubroutine(Ray ray, out bool result)
-{
-    
-    result = true;
-    return float4(0, 0, 0, 0);
-}
-
 
 [numthreads(16, 8, 1)]
 void RaycastingCS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
@@ -578,11 +808,8 @@ void RaycastingCS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
     bool result = false;
     float4 finalColor = (float4) 0;
     
-    if (useAccelerator)
-        finalColor = acceleratedSubroutine(ray, result);
-    else
-        finalColor = nonOptimizedSubroutine(ray, result);
-    
+    finalColor = raytraceScene(ray, result);
+   
     
     if (result)
         backBuffer[globalID.xy] = finalColor;

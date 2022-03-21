@@ -48,4 +48,7 @@
   <ItemGroup>
     <TrimmerRootAssembly Include="Microsoft.Xna.Framework.Content.ContentTypeReader" Visible="false" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Content\Raycaster\Experimental\" />
+  </ItemGroup>
 </Project>
