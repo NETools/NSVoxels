@@ -61,5 +61,10 @@ namespace NSVoxels.Pipeline.Stages
             PostProcessingFilter.End(result);
 
         }
+
+        public void Trigger(INSModification modification)
+        {
+            modification.Update(oldData, newData, accelerator);
+        }
     }
 }

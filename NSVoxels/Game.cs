@@ -55,6 +55,10 @@ namespace NSVoxels
 
 
         NSRenderPipeline renderPipeline;
+
+
+        VolumeInteractionRaycaster volumeInteraction; // debug, extremly experimental
+
         protected override void LoadContent()
         {
             Statics.GraphicsDevice = GraphicsDevice;
@@ -134,6 +138,10 @@ namespace NSVoxels
                 VisualSettings.MaxBounces += (float)(adjustSpeed * a.ElapsedGameTime.TotalSeconds);
             }, false);
 
+            MacroManager.GetDefault().DefineMacro(Keys.Z, (a) =>
+            {
+                InteractionSettings.AddVoxels = !InteractionSettings.AddVoxels;
+            }, true);
 
             MacroManager.GetDefault().DefineMacro(Keys.I, (a) =>
             {
@@ -161,6 +169,7 @@ namespace NSVoxels
 
             SimpleDynamicsQuery dynQuery = new SimpleDynamicsQuery();
             SimpleDynamicsBatch dynBatch = new SimpleDynamicsBatch();
+            SimpleDynamicsBatch dynBatch1 = new SimpleDynamicsBatch();
 
             /*
             dynBatch.AddComponent(new DynamicVoxelComponent()
@@ -185,6 +194,7 @@ namespace NSVoxels
             const int dz = 50;
 
             Vector3 center = new Vector3(240, 455, 280);
+            Vector3 centerA = new Vector3(450, 455, 280);
 
 
             for (int j = -dh; j < dh; j++)
@@ -201,16 +211,29 @@ namespace NSVoxels
                                 Position = center + cur,
                                 Direction = new Vector3(-0.49f, -1, 0)
                             });
+
+                            dynBatch1.AddComponent(new DynamicVoxelComponent()
+                            {
+                                Position = centerA + cur,
+                                Direction = new Vector3(0, -0.55f, 0)
+                            });
                         }
                     }
                 }
             }
 
             dynBatch.CreateDynamicsFor();
+            dynBatch1.CreateDynamicsFor();
 
             dynQuery.AddBatch(dynBatch);
+            dynQuery.AddBatch(dynBatch1);
 
             renderPipeline.Modification = dynQuery;
+
+
+            volumeInteraction = new VolumeInteractionRaycaster();
+            volumeInteraction.Load();
+
             
 
             renderPipeline.Start();
@@ -219,6 +242,7 @@ namespace NSVoxels
         }
 
 
+        private bool pressedMouseLeft;
         protected override void Update(GameTime gameTime)
         {
             if (!IsActive)
@@ -232,14 +256,14 @@ namespace NSVoxels
             if (Keyboard.GetState().IsKeyDown(Keys.W))
                 YawPitchCamera.Move(new Vector3(0, 0, 1) * (float)gameTime.ElapsedGameTime.TotalSeconds);
 
-           
+
             if (Keyboard.GetState().IsKeyDown(Keys.A))
                 YawPitchCamera.Move(new Vector3(-1, 0, 0) * (float)gameTime.ElapsedGameTime.TotalSeconds);
 
-            
+
             if (Keyboard.GetState().IsKeyDown(Keys.S))
                 YawPitchCamera.Move(new Vector3(0, 0, -1) * (float)gameTime.ElapsedGameTime.TotalSeconds);
-            
+
 
             if (Keyboard.GetState().IsKeyDown(Keys.D))
                 YawPitchCamera.Move(new Vector3(1, 0, 0) * (float)gameTime.ElapsedGameTime.TotalSeconds);
@@ -250,6 +274,19 @@ namespace NSVoxels
 
             if (Keyboard.GetState().IsKeyDown(Keys.LeftControl))
                 YawPitchCamera.Move(new Vector3(0, -1, 0) * (float)gameTime.ElapsedGameTime.TotalSeconds);
+
+
+            if (Mouse.GetState().LeftButton == ButtonState.Pressed && !pressedMouseLeft)
+            {
+                renderPipeline.Trigger(volumeInteraction);
+                //pressedMouseLeft = true;
+            }
+
+
+            if (Mouse.GetState().LeftButton == ButtonState.Released)
+            {
+                pressedMouseLeft = false;
+            }
 
 
             MacroManager.GetDefault().Update(gameTime);

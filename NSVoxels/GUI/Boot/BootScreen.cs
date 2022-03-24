@@ -73,7 +73,7 @@ namespace NSVoxels.GUI.Boot
             comboBox3.SelectedIndex = 1;
             comboBox4.SelectedIndex = 0;
 
-            checkBox1.Checked = true;
+            //checkBox1.Checked = true;
         }
 
         private void checkBox2_CheckedChanged(object sender, EventArgs e)

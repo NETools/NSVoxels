@@ -18,7 +18,6 @@ struct OctreeEntry
 };
 
 globallycoherent RWTexture3D<int> voxelDataBuffer;
-
 globallycoherent RWStructuredBuffer<OctreeEntry> accelerationStructureBuffer;
 
 int volumeInitialSize;

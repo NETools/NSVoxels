@@ -43,7 +43,7 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.Simple
                                    BufferUsage.None,
                                    ShaderAccess.ReadWrite);
             dynamicComponentBuffer.SetData<DynamicVoxelComponent>(components.ToArray());
-            simpleDynamicsEffect.Parameters["dynamicComponents"].SetValue(dynamicComponentBuffer);
+            
 
 
             numThreads = (int)Math.Ceiling(components.Count / 64.0) + 1;
@@ -60,6 +60,7 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.Simple
 
         public void Update(Texture3D oldData, Texture3D newData, StructuredBuffer accelerator)
         {
+            simpleDynamicsEffect.Parameters["dynamicComponents"].SetValue(dynamicComponentBuffer);
             simpleDynamicsEffect.Parameters["accelerationStructureBuffer"].SetValue(accelerator);
 
             if (PreStartSettings.UseDoubleBufferedVoxelData)
