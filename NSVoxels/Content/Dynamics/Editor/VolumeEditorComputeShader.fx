@@ -38,6 +38,7 @@ int getData(int3 position)
 
 void setData(uint3 pixel, int data)
 {
+    pixel = clamp(pixel, 1, volumeInitialSize);
     voxelDataBuffer[pixel] = data;
 }
 
@@ -526,33 +527,31 @@ RaytracingResult volumeRayTest(Ray ray, int maxIterations)
 void modifyVolume(Ray ray, int brushIndex)
 {
     BrushData currentBrushData = brushBuffer[brushIndex];
-    ray.origin += currentBrushData.position;
+    float3 originPosition = mul(float4(currentBrushData.position, 0), cameraRotation).xyz + ray.origin;
+    
+
+    ray.origin = originPosition;
     
     RaytracingResult result = volumeRayTest(ray, 256);
-        
+            
     if (result.isNull)
         return;
     
     if (brushAdd)
     {
-        if (getData(result.aabbLast.center) == 0 && getData(result.aabb.center) > 0)
-        {
-            setData(result.aabbLast.center, 3);
-            updateOctree(result.aabbLast.center, 1);
-        }
+        setData(result.aabbLast.center, 3);
+        updateOctree(result.aabbLast.center, 1);
     }
     else
     {
-        if (getData(result.aabb.center) > 0)
-        {
-            setData(result.aabb.center, 0);
-            //updateOctree(result.aabb.center, -1);
-        }
+        setData(result.aabb.center, 0);
+        //updateOctree(result.aabb.center, -1);
     }
 
+   
 }
 
-[numthreads(32, 1, 1)]
+[numthreads(64, 1, 1)]
 void VolumeModifier(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
                     uint localIndex : SV_GroupIndex, uint3 globalID : SV_DispatchThreadID)
 {

@@ -23,7 +23,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
 
         private StructuredBuffer brushDataBuffer;
 
-        private int divisor = 32;
+        private int divisor = 64;
         public VolumeInteractionRaycaster()
         {
             acceleratedRaycasterEffect = Statics.Content.Load<Effect>("Dynamics\\Editor\\VolumeEditorComputeShader");
@@ -77,27 +77,25 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
 
         private void CreateBrushData()
         {
-            const int r = 10;
+            const int r = 5;
             const int dw = r;
             const int dh = r;
             const int dz = r;
 
             List<BrushData> brushData = new List<BrushData>();
-
-            for (int j = -dh; j < dh; j++)
+            for (int i = -dw; i <= dw; i++)
             {
-                for (int k = -dz; k < dz; k++)
+                for (int j = -dh; j <= dh; j++)
                 {
-                    for (int i = -dw; i < dw; i++)
-                    {
-                        Vector3 cur = new Vector3(i, j, k);
-                        if (cur.LengthSquared() <= r * r)
-                            brushData.Add(new BrushData() { Position = cur });
-                        
-                    }
+                    Vector3 cur = new Vector3(i, j, 0);
+                    if (cur.Length() <= r)
+                        brushData.Add(new BrushData() { Position = cur });
                 }
             }
 
+          
+
+       
             brushDataBuffer = new StructuredBuffer(Statics.GraphicsDevice, typeof(BrushData), brushData.Count, BufferUsage.None, ShaderAccess.ReadWrite);
             brushDataBuffer.SetData<BrushData>(brushData.ToArray());
 
@@ -141,7 +139,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
             acceleratedRaycasterEffect.CurrentTechnique.Passes[0].ApplyCompute();
 
             Statics.GraphicsDevice.DispatchCompute(
-                (int)MathF.Ceiling(RaycastingSettings.Width / divisor), 1, 1);
+                (int)MathF.Ceiling(brushDataBuffer.ElementCount / divisor) +1 , 1, 1);
         }
     }
 }
