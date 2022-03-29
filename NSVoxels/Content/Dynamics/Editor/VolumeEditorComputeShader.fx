@@ -2,26 +2,14 @@
 {
     float3 position;
 };
-
-
+uniform bool brushAdd;
 globallycoherent RWStructuredBuffer<BrushData> brushBuffer;
 
 uniform float4x4 cameraRotation;
 uniform float3 cameraPosition;
-
 uniform float focalDistance;
 
-
 uniform int volumeInitialSize;
-uniform float oneOverVolumeInitialSize;
-
-uniform int nodeMinimumSize;
-
-
-uniform bool brushAdd;
-uniform int brushId;
-
-
 ///////////////////////////////////////////////////
 struct Voxel
 {
@@ -85,18 +73,6 @@ struct OctreeData
     int childrenCount;
 };
 globallycoherent RWStructuredBuffer<OctreeData> accelerationStructureBuffer;
-uniform Texture2D<float4> octantVectorLookUp;
-
-struct InterimOctreeData
-{
-    OctreeData octreeData;
-    
-    float3 currentPosition;
-    float currentSize;
-   
-    bool hasData;
-    bool isNull;
-};
 
 struct RaytracingResult
 {
@@ -114,23 +90,6 @@ struct RaytracingResult
     int iterations;
     bool isNull;
 };
-///////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////////
-InterimOctreeData getNode(uint index)
-{
-    InterimOctreeData node = (InterimOctreeData) 0;
-    node.octreeData = accelerationStructureBuffer[index];
-    node.hasData = node.octreeData.childrenCount > 0;
-    
-    return node;
-}
-
-float3 getOctantVector(int index)
-{
-    return octantVectorLookUp[uint2(index, 0)].xyz;
-}
 ///////////////////////////////////////////////////
 
 
@@ -274,171 +233,7 @@ bool arrayRayHit(in Ray ray,
     
     return voxelData > 0;
 }
-RaytracingResult acceleratedVolumeRayTest(Ray ray, int maxIterations)
-{
-    // REGISTERS
-    int skipListPerDepth[5];
-    int parentListPerDepth[5];
-    float3 positionListPerDepth[5];
-    
-    for (int i = 0; i < 5; i++)
-        skipListPerDepth[i] = 0;
-    
-    
-    int depthCounter = 0;
-    
-    // DATASTRUCTURE
-    InterimOctreeData parent = getNode(0);
-    parent.currentPosition = float3(0, 0, 0);
-    parent.currentSize = volumeInitialSize;
-    
-     // RETURN VALUE
-    RaytracingResult finalResult = (RaytracingResult) 0;
-    finalResult.isNull = true;
-    
-    AABB rootVolume = createAABB(parent.currentPosition, float3(1, 1, 1) * parent.currentSize);
 
-    float lambdaMin = 0;
-    float lambdaMax = 0;
-    
-    int3 biggerThanZero = ray.dirRcp > 0;
-    int3 lessThanZero = 1.0f - biggerThanZero;
-    
-    float3 minCorner = lessThanZero * rootVolume.maxSize;
-    float3 maxCorner = biggerThanZero * rootVolume.maxSize;
-    
-    if (checkHit(ray, rootVolume, minCorner, maxCorner, lambdaMin, lambdaMax))
-    {
-        int currentIndex = 0;
-        bool voxelFound = false;
-        
-        int iterations = 0;
-        int additionalIterations = 0;
-        [loop]
-        for (iterations = 0; iterations <= maxIterations; iterations++)
-        {
-            int childStartIndex = parent.octreeData.childStartIndex;
-            
-            InterimOctreeData nextParent = (InterimOctreeData) 0;
-            nextParent.isNull = true;
-            
-            float minDistToNode = 1E10;
-            float minDistToVoxel = 1E10;
-
-            int usedIndex = 0;
-            int nextIndex = 0;
-            
-            for (int i = 0; i < 8; i++)
-            {
-                if (((skipListPerDepth[depthCounter] >> i) & 1))
-                    continue;
-                
-                InterimOctreeData child = getNode(childStartIndex + i);
-                
-                if (!child.hasData)
-                    continue;
-                
-                child.currentSize = parent.currentSize * .5f;
-                child.currentPosition = parent.currentPosition + getOctantVector(i) * child.currentSize;
-                
-                AABB childVoxel = createAABB(child.currentPosition, child.currentSize);
-                    
-                minCorner = lessThanZero * childVoxel.maxSize;
-                maxCorner = biggerThanZero * childVoxel.maxSize;
-                
-                bool result = checkHit(ray, childVoxel, minCorner, maxCorner, lambdaMin, lambdaMax);
-                
-                if (result && lambdaMin < minDistToNode)
-                {
-                    minDistToNode = lambdaMin;
-                    if (child.currentSize <= nodeMinimumSize)
-                    {
-                        float depth = 0;
-                        float3 hitPoint = (float3) 0;
-                        float3 hitPointInt = (float3) 0;
-                        float3 normal = (float3) 0;
-                        AABB voxelAABB = (AABB) 0;
-                        AABB voxelAABBLast = (AABB) 0;
-                        int voxelData = 0;
-                        int traversalIterations = 0;
-                        bool result = arrayRayHit(ray, childVoxel, depth, hitPoint, hitPointInt, normal, voxelData, voxelAABB, voxelAABBLast, traversalIterations);
-                        
-                        additionalIterations += traversalIterations;
-                        
-                        if (result)
-                        {
-                            voxelFound = true;
-                            
-                            if (lambdaMin < minDistToVoxel)
-                            {
-                                minDistToVoxel = lambdaMin;
-                                
-                                RaytracingResult result = (RaytracingResult) 0;
-                                result.voxelDataPayload = voxelData;
-                                result.hitPointF32 = hitPoint;
-                                result.hitPointI32 = hitPointInt;
-                                result.surfaceNormal = normal;
-                                result.depth = depth;
-                                
-                                result.aabb = voxelAABB;
-                                result.aabbLast = voxelAABBLast;
-                                
-                                result.isNull = false;
-                                finalResult = result;
-                            }
-                            
-                        }
-                        else
-                            minDistToNode = 1E10;
-                    }
-                    else
-                    {
-                        nextParent = child;
-                        nextParent.isNull = false;
-                        usedIndex = i;
-                        nextIndex = childStartIndex + i;
-                    }
-                }
-            }
-            
-            if (voxelFound)
-                break;
-            
-            
-            if (nextParent.isNull)
-            {
-                skipListPerDepth[depthCounter] = 0;
-                
-                depthCounter--;
-                if (depthCounter < 0)
-                    break;
-                
-                int parentIndex = parentListPerDepth[depthCounter];
-                nextIndex = parentIndex;
-                
-                nextParent = getNode(parentIndex);
-                nextParent.currentSize = volumeInitialSize >> depthCounter;
-                nextParent.currentPosition = positionListPerDepth[depthCounter];
-                
-            }
-            else
-            {
-                skipListPerDepth[depthCounter] |= (1 << usedIndex);
-                positionListPerDepth[depthCounter] = parent.currentPosition;
-                parentListPerDepth[depthCounter] = currentIndex;
-
-                depthCounter++;
-            }
-            
-            parent = nextParent;
-            currentIndex = nextIndex;
-        }
-        
-        iterations += additionalIterations;
-        finalResult.iterations = iterations;
-    }
-    return finalResult;
-}
 ///////////////////////////////////////////////////
 
 //////////////////////////////////////////////////
@@ -555,8 +350,6 @@ void modifyVolume(Ray ray, int brushIndex)
 void VolumeModifier(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
                     uint localIndex : SV_GroupIndex, uint3 globalID : SV_DispatchThreadID)
 {
-    
- 
     Ray ray = (Ray) 0;
 	
     float3 newPosition = cameraPosition;

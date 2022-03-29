@@ -50,6 +50,5 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Content\Raycaster\Experimental\" />
-    <Folder Include="Pipeline\Concrete\Dynamics\RigidPhysics\" />
   </ItemGroup>
 </Project>

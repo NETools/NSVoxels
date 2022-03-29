@@ -34,7 +34,7 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.Simple
             this.components.Add(component);
         }
 
-        public void CreateDynamicsFor()
+        public void CreateBuffers()
         {
             dynamicComponentBuffer = new StructuredBuffer(
                                    Statics.GraphicsDevice,

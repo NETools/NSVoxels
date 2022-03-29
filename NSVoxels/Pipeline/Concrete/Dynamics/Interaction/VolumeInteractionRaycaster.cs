@@ -62,10 +62,6 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
 
 
             acceleratedRaycasterEffect.Parameters["volumeInitialSize"].SetValue(PreStartSettings.VolumeSize);
-            acceleratedRaycasterEffect.Parameters["oneOverVolumeInitialSize"].SetValue(1.0f / (float)PreStartSettings.VolumeSize);
-            
-            acceleratedRaycasterEffect.Parameters["nodeMinimumSize"].SetValue(PreStartSettings.MinimumAcceleratorNodeSize);
-            //acceleratedRaycasterEffect.Parameters["octantVectorLookUp"].SetValue(positionLookUp);
 
             acceleratedRaycasterEffect.Parameters["maxDepth"].SetValue((int)Math.Ceiling(Math.Log(PreStartSettings.VolumeSize / PreStartSettings.MinimumAcceleratorNodeSize) / Math.Log(2)));
 
@@ -80,7 +76,6 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
             const int r = 5;
             const int dw = r;
             const int dh = r;
-            const int dz = r;
 
             List<BrushData> brushData = new List<BrushData>();
             for (int i = -dw; i <= dw; i++)
