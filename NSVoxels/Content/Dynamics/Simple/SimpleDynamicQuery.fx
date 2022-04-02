@@ -166,7 +166,7 @@ void CS(uint3 globalID : SV_DispatchThreadID)
         if (currentVoxel == 0) // NO DATA YET, UPDATE OCTTREE
             addToOctree(currentVoxelPosition, 1);
         
-        setData(currentVoxelPosition, 5); // EXAMPLEDATA
+        setData(currentVoxelPosition, 2); // EXAMPLEDATA
     }
     else
     {
@@ -194,7 +194,7 @@ void CS(uint3 globalID : SV_DispatchThreadID)
         
        
         deleteData(currentVoxelPosition);
-        setData(nextVoxelPosition, 5);
+        setData(nextVoxelPosition, 2);
    
         
         

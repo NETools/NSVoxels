@@ -73,7 +73,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
 
         private void CreateBrushData()
         {
-            const int r = 5;
+            const int r = 10;
             const int dw = r;
             const int dh = r;
 
@@ -103,7 +103,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
 
 
         private float lastFOV;
-        public void Update(Texture3D oldData, Texture3D newData, StructuredBuffer accelerator)
+        public void Update(GameTime gameTime, Texture3D oldData, Texture3D newData, StructuredBuffer accelerator)
         {
 
             #region Parameter Pass

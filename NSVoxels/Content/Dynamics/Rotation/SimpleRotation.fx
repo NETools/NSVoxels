@@ -1,27 +1,23 @@
-﻿struct DynamicVoxelComponent
+﻿
+struct DynamicVoxelComponent
 {
     float3 position;
     float3 direction;
     int visitedOctants;
 };
-
-
-
 globallycoherent RWStructuredBuffer<DynamicVoxelComponent> dynamicComponents;
 
+///////////////////////////////////////////////////
+globallycoherent RWTexture3D<int> voxelDataBuffer;
+uniform int volumeInitialSize;
 
-/////////////////////////////////////////////////////////////////////////////
-struct OctreeEntry
+struct Voxel
 {
-    int childrenStartIndex;
-    int hasData;
+    int data;
+    bool isReflectable;
+    bool isGlass;
 };
 
-globallycoherent RWTexture3D<int> voxelDataBuffer;
-globallycoherent RWStructuredBuffer<OctreeEntry> accelerationStructureBuffer;
-
-int volumeInitialSize;
-int maxDepth; // is equivalent to maxIterations
 
 int getData(uint3 pixel)
 {
@@ -37,8 +33,28 @@ void deleteData(uint3 pixel)
 {
     voxelDataBuffer[pixel] = 0;
 }
+///////////////////////////////////////////////////
+
+///////////////////////////////////////////////////
+struct Ray
+{
+    float3 origin;
+    float3 dir;
+    float3 dirRcp;
+    
+};
+///////////////////////////////////////////////////
+
 
 /////////////////////////////////////////////////////////////////////////////
+struct OctreeEntry
+{
+    int childrenStartIndex;
+    int hasData;
+};
+globallycoherent RWStructuredBuffer<OctreeEntry> accelerationStructureBuffer;
+int maxDepth; // is equivalent to maxIterations
+
 
 uint calculateRelativeIndex(uint v, uint d)
 {
@@ -88,10 +104,8 @@ void updateOctree(int oldOctants, int newOctants)
         if (oldIndex != newIndex)
         {
             InterlockedAdd(accelerationStructureBuffer[oldIndex].hasData, -1);
-            InterlockedAdd(accelerationStructureBuffer[newIndex].hasData, +1);   
+            InterlockedAdd(accelerationStructureBuffer[newIndex].hasData, +1);
         }
-        
-        
         
         oldIndex = oldNode.childrenStartIndex + getRelativeOctant(oldOctants, depth);
         newIndex = newNode.childrenStartIndex + getRelativeOctant(newOctants, depth);
@@ -122,132 +136,63 @@ int getOctants(uint3 pos)
     return visitedOctants;
 }
 
-struct AABB
-{
-    float3 center;
-    float3 maxSize;
-};
-AABB createAABB(float3 center, float3 max)
-{
-    AABB aabb = (AABB) 0;
-    aabb.center = center;
-    aabb.maxSize = max;
-    return aabb;
-}
-bool isInsideVolume(float3 position, AABB aabb)
-{
-    float3 min1 = aabb.center;
-    float3 max1 = aabb.center + aabb.maxSize;
-    return
-            (position.x >= min1.x) & (position.y >= min1.y) & (position.z >= min1.z) &
-            (position.x <= max1.x) & (position.y <= max1.y) & (position.z <= max1.z);
-}
+/////////////////////////////////////////////////////////////////////////////
 
-[numthreads(64, 1, 1)]
-void CS(uint3 globalID : SV_DispatchThreadID)
+
+/////////////////////////////////////////////////////////////////////////////
+float4x4 voxelTransformation;
+float4x4 voxelTransformation_old;
+
+float3 com_Position_old;
+float3 com_Position;
+void updateCurrentIndex(int index)
 {
-    DynamicVoxelComponent currentComponent = dynamicComponents[globalID.x];
-    float3 absolutePosition = currentComponent.position;
+    DynamicVoxelComponent currentData = dynamicComponents[index];
+    float3 absolutePosition = mul(float4(currentData.position, 0), voxelTransformation).xyz + com_Position;
+    float3 absolutePosition_old = mul(float4(currentData.position, 0), voxelTransformation_old).xyz + com_Position_old;
     
-    uint3 currentVoxelPosition = uint3(
-                        (int) absolutePosition.x,
-                        (int) absolutePosition.y,
-                        (int) absolutePosition.z);
     
-    int visitedOctants = currentComponent.visitedOctants;
+    //////////////////////////// VIEW SIDE ////////////////////////////
     
-    if (visitedOctants == 0) // DYNAMIC OBJECT INITIALIZATION
+    uint3 absolutePosition_int = floor(absolutePosition);
+    uint3 absolutePosition_old_int = floor(absolutePosition_old);
+    
+    int visitedOctants = currentData.visitedOctants;
+    int currentVoxel = getData(absolutePosition_int);
+    
+    if (visitedOctants == 0)
     {
-        dynamicComponents[globalID.x].visitedOctants = getOctants(currentVoxelPosition);
-            
-        int currentVoxel = getData(currentVoxelPosition);
-        if (currentVoxel == 0) // NO DATA YET, UPDATE OCTTREE
-            addToOctree(currentVoxelPosition, 1);
-        
-        setData(currentVoxelPosition, 3); // EXAMPLEDATA
+        dynamicComponents[index].visitedOctants = getOctants(absolutePosition_int);
+        addToOctree(absolutePosition_int, 1);
     }
     else
     {
-        float3 nextAbsolutePosition = absolutePosition + currentComponent.direction;
-        uint3 nextVoxelPosition = uint3(
-                        (int) nextAbsolutePosition.x,
-                        (int) nextAbsolutePosition.y,
-                        (int) nextAbsolutePosition.z);
-        
-        
-        if (!isInsideVolume(nextVoxelPosition, createAABB(float3(1, 1, 1), float3(511, 511, 511))))
-        {
-            dynamicComponents[globalID.x].direction = (float3) 0;
-            return;
-        }
-        
-        
-        int nextToVisitOctants = getOctants(nextVoxelPosition);
-        
+        int nextToVisitOctants = getOctants(absolutePosition_int);
         if (nextToVisitOctants != visitedOctants) // UPDATE OCTREE
         {
-            dynamicComponents[globalID.x].visitedOctants = nextToVisitOctants;
             updateOctree(visitedOctants, nextToVisitOctants);
+            dynamicComponents[index].visitedOctants = nextToVisitOctants;
         }
-        
-       
-        deleteData(currentVoxelPosition);
-        setData(nextVoxelPosition, 3);
-   
-        
-        
-        dynamicComponents[globalID.x].position = nextAbsolutePosition;
-        
     }
-    
-    
+    deleteData(absolutePosition_old_int);
+    setData(absolutePosition_int, 7);
+    //////////////////////////////////////////////////////////////////////
+}
+/////////////////////////////////////////////////////////////////////////////
 
-    
-    
-    
+[numthreads(64, 1, 1)]
+void RotationCS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
+                    uint localIndex : SV_GroupIndex, uint3 globalID : SV_DispatchThreadID)
+{
+    updateCurrentIndex(globalID.x);
 }
 
 
-technique AcceleratorTechnique
+technique CollisionQueryTechnique
 {
     pass GenerateOctree
     {
-        ComputeShader = compile cs_5_0 CS();
+        ComputeShader = compile cs_5_0 RotationCS();
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

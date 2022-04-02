@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using NSVoxels.Pipeline.Stages;
 using NSVoxels.Pipeline.Stages.Dynamics;
 using System;
@@ -23,7 +24,7 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.Simple
             this.dynamicBatches.Add(batch);
         }
 
-        public void Update(Texture3D oldData, Texture3D newData, StructuredBuffer accelerator)
+        public void Update(GameTime gameTime, Texture3D oldData, Texture3D newData, StructuredBuffer accelerator)
         {
             for (int i = 0; i < dynamicBatches.Count; i++)
             {

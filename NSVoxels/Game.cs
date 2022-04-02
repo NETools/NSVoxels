@@ -9,7 +9,7 @@ using NSVoxels.GUI.DebugInfo;
 using NSVoxels.GUI.Macros;
 using NSVoxels.Interactive;
 using NSVoxels.Pipeline.Concrete.Accelerator;
-using NSVoxels.Pipeline.Concrete.Dynamics.RigidPhysics;
+using NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall;
 using NSVoxels.Pipeline.Concrete.Dynamics.Simple;
 using NSVoxels.Pipeline.Concrete.Generator;
 using NSVoxels.Pipeline.Concrete.Postprocessor;
@@ -64,10 +64,12 @@ namespace NSVoxels
             Statics.Content = Content;
 
             RaycastingSettings.FOV = 2.0f;
+            RaycastingSettings.UseAccelerator = true;
+
             VisualSettings.UseMedianFilter = true;
 
             YawPitchCamera.Initialize();
-            YawPitchCamera.CameraPosition = new Vector3(194.50781f, 422.70593f, 532.7831f);
+            YawPitchCamera.CameraPosition = new Vector3(550, 530, 550);
 
             spriteBatch = new SpriteBatch(GraphicsDevice);
             #region Macros
@@ -153,10 +155,29 @@ namespace NSVoxels
                 VisualSettings.ShowIterations = !VisualSettings.ShowIterations;
             }, true);
 
+
+            SimpleDynamicsQuery dynQuery = new SimpleDynamicsQuery();
+
+
             MacroManager.GetDefault().DefineMacro(Keys.J, (a) =>
             {
-                renderPipeline.Update();
+                renderPipeline.Step(a, dynQuery);
             }, false);
+
+
+            SimpleSpherePhysics simpleShere = new SimpleSpherePhysics();
+            simpleShere.CreateSphere(new Vector3(230, 480, 330), 25, 0.01f);
+            simpleShere.LoadBuffers();
+
+            bool loadedSphere = false;
+            MacroManager.GetDefault().DefineMacro(Keys.L, (a) =>
+            {
+                if (loadedSphere) return;
+                loadedSphere = true;
+                renderPipeline.Modifications.Add(simpleShere);
+
+            }, true);
+
 
             VisualSettings.IterationScalingFactor = RaycastingSettings.UseAccelerator ? (1.0f / 300.0f) : (1.0f / 1000.0f);
 
@@ -166,91 +187,69 @@ namespace NSVoxels
             renderPipeline.Raytracer = new NSVoxelRaytracer();
             renderPipeline.PostProcessingFilter = new MedianFilter();
 
-            SimpleDynamicsQuery dynQuery = new SimpleDynamicsQuery();
             SimpleDynamicsBatch dynBatch = new SimpleDynamicsBatch();
             SimpleDynamicsBatch dynBatch1 = new SimpleDynamicsBatch();
 
-            const int dw = 50;
-            const int dh = 50;
-            const int dz = 50;
+            int r = 25;
 
-            Vector3 center = new Vector3(240, 455, 280);
-            Vector3 centerA = new Vector3(450, 455, 280);
+            Vector3 centerA = new Vector3(490, 460, 280);
+            Vector3 centerB = new Vector3(240, 460, 280);
 
-
-            VoxelRigidPhysics voxelRigidPhysics = new VoxelRigidPhysics();
-
-
-
-            //for (int j = -dh; j < dh; j++)
-            //{
-            //    for (int k = -dz; k < dz; k++)
-            //    {
-            //        for (int i = -dw; i < dw; i++)
-            //        {
-            //            Vector3 cur = new Vector3(i, j, k);
-            //            if (cur.LengthSquared() <= 25 * 25)
-            //            {
-            //                /*
-            //                dynBatch.AddComponent(new DynamicVoxelComponent()
-            //                {
-            //                    Position = center + cur,
-            //                    Direction = new Vector3(-0.49f, -1, 0)
-            //                });
-
-            //                dynBatch1.AddComponent(new DynamicVoxelComponent()
-            //                {
-            //                    Position = centerA + cur,
-            //                    Direction = new Vector3(0, -0.55f, 0)
-            //                });*/
-
-            //                voxelRigidPhysics.AddRigidComponent(center + cur, 0.001f);
-            //            }
-            //        }
-            //    }
-            //}
-
-            /*
-            for (int j = 0; j < 10; j++)
-
-                for (int i = 0; i < 50; i++)
-                {
-                    voxelRigidPhysics.AddRigidComponent(new Vector3(255 + i, 450 + i * 0.1f, 255 + j), 1f);
-                }
-
-
-            */
-
-            int r = 20;
-            for (int i = 0; i < 100; i++)
+            for (int j = -r; j < r; j++)
             {
+                for (int k = -r; k < r; k++)
+                {
+                    for (int i = -r; i < r; i++)
+                    {
+                        Vector3 cur = new Vector3(i, j, k);
+                        if (cur.LengthSquared() <= r * r)
+                        {
+                            dynBatch.AddComponent(new DynamicVoxelComponent()
+                            {
+                                Position = centerA + cur,
+                                Direction = new Vector3(-0.49f, -1, 0)
+                            });
+
+                            dynBatch1.AddComponent(new DynamicVoxelComponent()
+                            {
+                                Position = centerB + cur,
+                                Direction = new Vector3(0, -0.55f, 0)
+                            });
+
+                        }
+                    }
+                }
+            }
 
 
+            SimpleVoxelRotation simpleVoxelRotation = new SimpleVoxelRotation();
+
+            r = 5;
+            for (int i = 0; i < 200; i++)
+            {
                 for (int j = 0; j < 360; j++)
                 {
                     int px = (int)(r * Math.Cos(j * Math.PI / 180.0));
                     int py = (int)(r * Math.Sin(j * Math.PI / 180.0));
 
 
-                    voxelRigidPhysics.AddRigidComponent(new Vector3(i + 255,450 + px, 255 + py ), 0.01f);
+                    simpleVoxelRotation.AddRigidComponent(new Vector3(i + 150, 450 + px, 300 + py), 0.01f);
                 }
-
-
-
             }
 
-            /*
+
             dynBatch.CreateBuffers();
             dynBatch1.CreateBuffers();
 
             dynQuery.AddBatch(dynBatch);
             dynQuery.AddBatch(dynBatch1);
-            */
+            
 
-            voxelRigidPhysics.LoadBuffers();
+            simpleVoxelRotation.LoadBuffers();
 
+            
 
-            renderPipeline.Modification = voxelRigidPhysics;
+            //renderPipeline.Modification = voxelRigidPhysics;
 
 
             volumeInteraction = new VolumeInteractionRaycaster();
@@ -259,6 +258,18 @@ namespace NSVoxels
 
 
             renderPipeline.Start();
+
+
+      
+
+
+            bool loadedRod = false;
+            MacroManager.GetDefault().DefineMacro(Keys.K, (a) =>
+            {
+                if (loadedRod) return;
+                loadedRod = true;
+                renderPipeline.Modifications.Add(simpleVoxelRotation);
+            }, true);
 
             base.LoadContent();
         }
@@ -298,7 +309,7 @@ namespace NSVoxels
 
 
             if (Mouse.GetState().LeftButton == ButtonState.Pressed)
-                renderPipeline.Trigger(volumeInteraction);
+                renderPipeline.Step(gameTime, volumeInteraction);
 
 
        
@@ -308,7 +319,8 @@ namespace NSVoxels
             YawPitchCamera.Update();
 
 
-            renderPipeline.Update();
+            renderPipeline.Update(gameTime);
+
             base.Update(gameTime);
         }
 

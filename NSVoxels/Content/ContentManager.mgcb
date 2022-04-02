@@ -37,6 +37,12 @@
 /processorParam:DebugMode=Auto
 /build:Dynamics/NoDoubleBuffer/SimpleDynamicQueryNoDoubleBuffer.fx
 
+#begin Dynamics/Rotation/SimpleRotation.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Dynamics/Rotation/SimpleRotation.fx
+
 #begin Dynamics/Simple/SimpleDynamicQuery.fx
 /importer:EffectImporter
 /processor:EffectProcessor
@@ -73,6 +79,12 @@
 /processor:EffectProcessor
 /processorParam:DebugMode=Optimize
 /build:Raycaster/VoxelRaycaster16x8.fx
+
+#begin Sounds/ballhit.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/ballhit.wav
 
 #begin Textures/scene0/0.png
 /importer:TextureImporter
@@ -145,6 +157,18 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:Textures/scene0/6.png
+
+#begin Textures/scene0/7.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Textures/scene0/7.png
 
 #begin Textures/scene0/dbg.png
 /importer:TextureImporter

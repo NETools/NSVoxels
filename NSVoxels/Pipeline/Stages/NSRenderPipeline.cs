@@ -14,7 +14,7 @@ namespace NSVoxels.Pipeline.Stages
     {
         public INStart VoxelDataGenerator { get; set; }
         public INSAccelerator AcceleratorStructureGenerator { get; set; }
-        public INSModification Modification { get; set; }
+        public List<INSModification> Modifications { get; set; }
         public INSRaytracer Raytracer { get; set; }
         public INSOutput PostProcessingFilter { get; set; }
 
@@ -32,6 +32,8 @@ namespace NSVoxels.Pipeline.Stages
 
             isStarted = true;
 
+            Modifications = new List<INSModification>();
+
             var fullData = VoxelDataGenerator.Begin();
 
             oldData = fullData.Item1;
@@ -43,14 +45,19 @@ namespace NSVoxels.Pipeline.Stages
             Raytracer.Load();   
         }
 
-        public void Update()
+        public void Update(GameTime gameTime)
         {
 
             var oldReference = oldData;
             oldData = newData;
             newData = oldReference;
 
-            Modification.Update(oldData, newData, accelerator);
+            //Modification.Update(oldData, newData, accelerator);
+
+            for (int i = 0; i < Modifications.Count; i++)
+            {
+                Modifications[i].Update(gameTime, oldData, newData, accelerator);
+            }
         }
 
         public void Draw()
@@ -62,9 +69,9 @@ namespace NSVoxels.Pipeline.Stages
 
         }
 
-        public void Trigger(INSModification modification)
+        public void Step(GameTime gameTime, INSModification modification)
         {
-            modification.Update(oldData, newData, accelerator);
+            modification.Update(gameTime, oldData, newData, accelerator);
         }
     }
 }

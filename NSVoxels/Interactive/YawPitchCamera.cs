@@ -19,7 +19,7 @@ namespace NSVoxels.Interactive
         public static float Pitch;
 
         public static float DPI = 0.0025f;
-        public static float Velocity = 64;
+        public static float Velocity = 60;
 
 
         private static int oldX, oldY;

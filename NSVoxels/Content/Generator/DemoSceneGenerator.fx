@@ -103,9 +103,22 @@ void CS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
 {
     
     
+    
+    //if(globalID.y == 470 && globalID.x == 255 && globalID.z == 255)
+    //    setData(globalID, 3);
+    
+    //if (globalID.y == 470 && globalID.x == 256 && globalID.z == 255)
+    //    setData(globalID, 4);
+    
+    //if (globalID.y == 470 && globalID.x == 255 && globalID.z == 256)
+    //    setData(globalID, 6);
+    
+    //return;
+    
     float noiseY = snoise(float2(globalID.x / 256.0f, globalID.z / 256.0f)) * 60 + 70;
     
     float3 dist = globalID - float3(256, 256, 256);
+    
     if (dot(dist, dist) <= 60 * 60)
         setData(globalID, 3);
     else if (dot(dist, dist) >= 60 * 60 && dot(dist, dist) <= 64 * 64)

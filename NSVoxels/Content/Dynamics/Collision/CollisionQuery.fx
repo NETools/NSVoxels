@@ -13,7 +13,8 @@ struct CollisionData
 {
     float3 netRepellingForces;
     float3 netCorrectionOffsets;
-    float3 netTorque;
+    
+    int collisions;
 };
 globallycoherent RWStructuredBuffer<CollisionData> collisionData;
 
@@ -123,8 +124,7 @@ bool isInsideVolume(float3 position, AABB aabb)
 
 
 ///////////////////////////////////////////////////
-int getDepth(in Ray ray,
-                 in AABB volume)
+void getCollidingIndex(in Ray ray, in AABB volume, out uint3 arrayIndex)
 {
     
     volume.center = max(volume.center - 1, 0);
@@ -166,12 +166,10 @@ int getDepth(in Ray ray,
     minCorner = lessThanZero * currentVoxel.maxSize;
     maxCorner = biggerThanZero * currentVoxel.maxSize;
     
-    int currentData = 0;
-    int depth = 0;
-    
+    int currentData = 0;    
     [loop]
     while (checkHit(ray, currentVoxel, sgnsPerComps, minCorner, maxCorner, lambdaMin, lambdaMax, sideMin, sideMax)
-                      & (currentData != 0 & currentData != 5)
+                      & (currentData == 0 | currentData == 5)
                       & (maximumDepth - lambdaMin >= 1))
     {
         
@@ -186,11 +184,10 @@ int getDepth(in Ray ray,
             
         currentData = getData(intPosition3);
         currentVoxel.center = intPosition3;
-            
-        depth++;
     }
     
-    return depth;
+    arrayIndex = intPosition3;
+    
 }
 
 ///////////////////////////////////////////////////
@@ -291,81 +288,86 @@ int getOctants(uint3 pos)
 
 
 /////////////////////////////////////////////////////////////////////////////
-float4x4 voxelTransformation;
-float4x4 lastVoxelTransformation;
-
 float3 com_Position_old;
 float3 com_Position;
+
 float3 com_Velocity;
+float3 com_Velocity_old;
+
 
 void updateCurrentIndex(int index)
 {
     DynamicVoxelComponent currentData = dynamicComponents[index];
-    float3 absolutePosition = floor(mul(float4(currentData.position, 0), voxelTransformation).xyz) + com_Position;
-    float3 lastAbsolutePosition = floor(mul(float4(currentData.position, 0), lastVoxelTransformation).xyz) + com_Position_old;
+    float3 absolutePosition = currentData.position + com_Position;
+    float3 absolutePosition_old = currentData.position + com_Position_old;
     
+    
+    //////////////////////////// VIEW SIDE ////////////////////////////
+    
+    uint3 absolutePosition_int = floor(absolutePosition);
+    uint3 absolutePosition_old_int = floor(absolutePosition_old);
     
     int visitedOctants = currentData.visitedOctants;
-    int currentVoxelAtAbsPos = getData(absolutePosition);
+    int currentVoxel = getData(absolutePosition_int);
     
-
-    if (currentVoxelAtAbsPos == 0 | currentVoxelAtAbsPos == 5)
+    if (visitedOctants == 0)
     {
-        if (visitedOctants == 0)
-        {
-            dynamicComponents[index].visitedOctants = getOctants(absolutePosition);
-            addToOctree(absolutePosition, 1);
-        }
-        else
-        {
-            int nextToVisitOctants = getOctants(absolutePosition);
-            if (nextToVisitOctants != visitedOctants) // UPDATE OCTREE
-            {
-                updateOctree(visitedOctants, nextToVisitOctants);
-                dynamicComponents[index].visitedOctants = nextToVisitOctants;
-            }
-        }
-        
-        deleteData(lastAbsolutePosition);
-        setData(absolutePosition, 5);
-          
+        dynamicComponents[index].visitedOctants = getOctants(absolutePosition_int);
+        addToOctree(absolutePosition_int, 1);
     }
     else
     {
-        Ray depthRay = (Ray) 0;
-        
-        float3 positionVector = absolutePosition - com_Position;
-        float distance = length(positionVector);
-        
-        float3 normal = normalize(positionVector);
-        
-        float3 v_ab = -com_Velocity;
-        float vN = dot(v_ab, normal);
-        float j = (-(1.0f + 0.1) * vN) / ((1.0f / 1) + (1.0f / 1));
-        
-        float3 impulse = j * normal;
-        float3 force = impulse;
-        
-        depthRay.origin = absolutePosition;
-        depthRay.dir = -normal;
-        depthRay.dirRcp = rcp(depthRay.dir);
-        
-        float impulseLength = length(impulse);
-        
-        //float depth = getDepth(depthRay, createAABB(0, volumeInitialSize));
-        //float3 correction = (max(depth - 0, 1) / (2 * impulse)) * normal;
-        
-        float3 torque = cross(dynamicComponents[index].position / length(dynamicComponents[index].position), force);
-        
-        //collisionData[0].netCorrectionOffsets += correction; // data racing
-        collisionData[0].netRepellingForces += force; // data racing
-        collisionData[0].netTorque += torque; // data racing
+        int nextToVisitOctants = getOctants(absolutePosition_int);
+        if (nextToVisitOctants != visitedOctants) // UPDATE OCTREE
+        {
+            updateOctree(visitedOctants, nextToVisitOctants);
+            dynamicComponents[index].visitedOctants = nextToVisitOctants;
+        }
     }
+    
+    deleteData(absolutePosition_old_int);
+    setData(absolutePosition_int, 5);
+    //////////////////////////////////////////////////////////////////////
+     
+    
+    ////////////////////////////// PHYSICS ///////////////////////////////
+    float3 obstacleCenter = (float3) 0;
+    
+    Ray collisionRay = (Ray) 0;
+    collisionRay.origin = absolutePosition;
+    collisionRay.dir = normalize(com_Velocity);
+    collisionRay.dirRcp = rcp(collisionRay.dir);
+    
+    getCollidingIndex(collisionRay, createAABB(0, 512), obstacleCenter);
+    obstacleCenter += 0.5f;
+    float3 currentVoxelCenter = absolutePosition + 0.5f;
+    
+    
+    float legalDistance = 2; // (1 + 1) -- voxel radii is 1 each [!]
+    
+    float3 positionVector = obstacleCenter - currentVoxelCenter;
+    float distance = length(positionVector);
+    
+    if (distance <= legalDistance)
+    {
+        float depth = (legalDistance - distance);
         
+        if (distance < 0.1)
+            return;
+                        
+        collisionData[0].collisions++;
         
+        if (collisionData[0].collisions < 2)
+        {
+            collisionData[0].netRepellingForces += normalize(currentData.position) * length(com_Velocity);
+            collisionData[0].netCorrectionOffsets += normalize(positionVector) * depth;
+        }
+
+    }
     
+ 
     
-    
+    //////////////////////////////////////////////////////////////////////
 }
 
 

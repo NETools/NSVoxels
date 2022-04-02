@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using NSVoxels.Globals;
 using NSVoxels.Pipeline.Stages;
@@ -10,23 +11,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NSVoxels.Pipeline.Concrete.Dynamics.RigidPhysics
+namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
 {
-    public class VoxelRigidPhysics : INSModification
+    public class SimpleSpherePhysics : INSModification
     {
-        public static float dt = 0.1f;
+        public static float dt = 80;
 
         public Vector3 Position;
         public Vector3 Velocity;
-        public Vector3 Rotation;
+
+        private Vector3 position_old;
+        private Vector3 velocity_old;
 
         public Vector3 Force;
-        public Vector3 Torque;
-
-
         public float Mass;
-        //public float Inertia;
-
 
         private List<DynamicVoxelComponent> rigidComponents = new List<DynamicVoxelComponent>();
         private StructuredBuffer rigidComponentsBuffer;
@@ -37,10 +35,12 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.RigidPhysics
         private StructuredBuffer collisionQueryBuffer;
         private CollisionData[] collisionResult;
 
-        public VoxelRigidPhysics()
+        private SoundEffect soundEffect;
+
+        public SimpleSpherePhysics()
         {
             collisionQuery = Statics.Content.Load<Effect>("Dynamics\\Collision\\CollisionQuery");
-
+            soundEffect = Statics.Content.Load<SoundEffect>("Sounds\\ballhit");
 
 
             int maxIterations = (int)Math.Ceiling(
@@ -48,29 +48,18 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.RigidPhysics
             collisionQuery.Parameters["maxDepth"].SetValue(maxIterations);
             collisionQuery.Parameters["volumeInitialSize"].SetValue(PreStartSettings.VolumeSize);
 
-
-            Force = new Vector3(0, -10, 0);
+           
         }
-
-        public void Update(Texture3D oldData, Texture3D newData, StructuredBuffer accelerator)
+        public void Update(GameTime gameTime, Texture3D oldData, Texture3D newData, StructuredBuffer accelerator)
         {
+            Force += new Vector3(0, -9.81f, 0);
+            Force += -Velocity * 0.25f;
 
-            Matrix transformationOld = Matrix.CreateFromAxisAngle(Rotation, Rotation.Length());
-            collisionQuery.Parameters["com_Position_old"].SetValue(Position);
-            collisionQuery.Parameters["lastVoxelTransformation"].SetValue(transformationOld);
 
-            Velocity += (Force / Mass) * dt;
-            Position += Velocity * dt;
-            Rotation += (Torque / 1) * dt;
+            Velocity += (Force / Mass) * dt * (float)gameTime.ElapsedGameTime.TotalSeconds;
+            Position += Velocity * dt * (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-    
-            Matrix transformationNew = Matrix.CreateFromAxisAngle(Rotation, Rotation.Length());
-
-    
-            collisionQuery.Parameters["voxelTransformation"].SetValue(transformationNew);
             collisionQuery.Parameters["com_Position"].SetValue(Position);
-
-
             collisionQuery.Parameters["com_Velocity"].SetValue(Velocity);
 
             collisionQuery.Parameters["dynamicComponents"].SetValue(rigidComponentsBuffer);
@@ -78,21 +67,53 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.RigidPhysics
             collisionQuery.Parameters["voxelDataBuffer"].SetValue(newData);
 
             collisionQuery.Parameters["collisionData"].SetValue(collisionQueryBuffer);
-
-
-
             collisionQuery.CurrentTechnique.Passes[0].ApplyCompute();
             Statics.GraphicsDevice.DispatchCompute(numThreads, 1, 1);
 
-            // Questionable...
+
+            //////////////////////////////// DELETION ////////////////////////////////
+            velocity_old = Velocity;
+            position_old = Position;
+
+            collisionQuery.Parameters["com_Position_old"].SetValue(position_old);
+            collisionQuery.Parameters["com_Velocity_old"].SetValue(velocity_old);
+
+            Force = Vector3.Zero;
+
+            //////////////////////////////////////////////////////////////////////////
+
+            
+            if (Velocity.Length() < 0.1)
+                return;
+
+            //////////////////////////////// RETRIEVAL ///////////////////////////////
+            ////////////////////////////// (INEFFICIENT) /////////////////////////////
             collisionQueryBuffer.GetData<CollisionData>(collisionResult);
 
+
+            if (collisionResult[0].Collisions > 0)
+            {
+                if (Math.Abs(collisionResult[0].NetRepellingForces.X) > 0.5 ||
+                    Math.Abs(collisionResult[0].NetRepellingForces.Y) > 0.5 ||
+                    Math.Abs(collisionResult[0].NetRepellingForces.Z) > 0.5)
+                {
+                    soundEffect.Play();
+                }
+
+            }
+ 
             Velocity -= collisionResult[0].NetRepellingForces;
-            //Position -= collisionResult[0].NetCorrectionOffsets;
-            Torque -= collisionResult[0].NetTorque;
+            Position -= collisionResult[0].NetCorrectionOffsets;
 
 
-            // Questionable... 
+            if (Position.X < 0 || Position.Y < 0 || Position.Z < 0 || Position.X >= 512 || Position.Y >= 512 || Position.Z >= 512)
+            {
+                Position = new Vector3(255, 480, 255);
+                Velocity = Vector3.Zero;
+            }
+
+            //////////////////////////////////////////////////////////////////////////
+
             collisionResult = new CollisionData[]{ new CollisionData() };
             collisionQueryBuffer.SetData<CollisionData>(collisionResult);
         }
@@ -106,6 +127,25 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.RigidPhysics
             });
             Position += absolutePosition;
             Mass += mass;
+        }
+
+
+        public void CreateSphere(Vector3 center, int r, float massPerVoxel)
+        {
+            for (int j = -r; j < r; j++)
+            {
+                for (int k = -r; k < r; k++)
+                {
+                    for (int i = -r; i < r; i++)
+                    {
+                        Vector3 cur = new Vector3(i, j, k);
+                        if (cur.LengthSquared() <= r * r)
+                        {
+                            this.AddRigidComponent(center + cur, massPerVoxel);
+                        }
+                    }
+                }
+            }
         }
 
         public void LoadBuffers()
