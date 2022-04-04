@@ -60,11 +60,11 @@ namespace NSVoxels.Pipeline.Stages
             }
         }
 
-        public void Draw()
+        public void Draw(GameTime gameTime)
         {
             if (Raytracer == null) return;
 
-            var result = Raytracer.Calculate(newData, accelerator);
+            var result = Raytracer.Calculate(gameTime, newData, accelerator);
             PostProcessingFilter.End(result);
 
         }

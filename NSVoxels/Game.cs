@@ -166,7 +166,7 @@ namespace NSVoxels
 
 
             SimpleSpherePhysics simpleShere = new SimpleSpherePhysics();
-            simpleShere.CreateSphere(new Vector3(230, 480, 330), 25, 0.01f);
+            simpleShere.CreateSphere(new Vector3(230, 480, 300), 25, 0.01f);
             simpleShere.LoadBuffers();
 
             bool loadedSphere = false;
@@ -330,7 +330,7 @@ namespace NSVoxels
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
 
-            renderPipeline.Draw();
+            renderPipeline.Draw(gameTime);
 
             spriteBatch.Begin();
             DebugPrinter.GetDefault().Print(spriteBatch, gameTime);

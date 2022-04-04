@@ -5,3 +5,5 @@
 [5.png]: http://spiralgraphics.biz/packs/terrain_desert_barren/index.htm?16
 [6.png]: https://seamless-pixels.blogspot.com/2015/11/grass-choppy-green-seamless-texture.html
 [7.png]: https://pixabay.com/de/photos/holz-bretter-textur-h%c3%b6lzern-brown-2045380/
+[8.png]: https://de.dreamstime.com/lava-magma-texture-abstract-bright-feuer-flammt-hintergrund-image116539768
+[9.png]: https://paulnewmanmodelling.artstation.com/projects/ybAxA5

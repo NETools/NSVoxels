@@ -119,10 +119,14 @@ void CS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
     
     float3 dist = globalID - float3(256, 256, 256);
     
-    if (dot(dist, dist) <= 60 * 60)
+    if (dot(dist, dist) <= 60 * 60 && dot(dist, dist) >= 30 * 30)
         setData(globalID, 3);
     else if (dot(dist, dist) >= 60 * 60 && dot(dist, dist) <= 64 * 64)
         setData(globalID, 1);
+    else if (dot(dist, dist) <= 30 * 30 && dot(dist, dist) >= 15 * 15)
+        setData(globalID, 8 | (1 << 15));
+    else if (dot(dist, dist) <= 15 * 15)
+        setData(globalID, 9 | (1 << 15));
     
     else if (globalID.y <= noiseY - 5)
         setData(globalID, 3);

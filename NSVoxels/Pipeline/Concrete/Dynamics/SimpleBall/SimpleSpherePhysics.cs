@@ -106,7 +106,8 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
             Position -= collisionResult[0].NetCorrectionOffsets;
 
 
-            if (Position.X < 0 || Position.Y < 0 || Position.Z < 0 || Position.X >= 512 || Position.Y >= 512 || Position.Z >= 512)
+            if (Position.X < 0 || Position.Y < 0 || Position.Z < 0 || Position.X >= 512 || Position.Y >= 512 || Position.Z >= 512
+                || float.IsNaN(Position.X) || float.IsNaN(Position.Y) || float.IsNaN(Position.Z))
             {
                 Position = new Vector3(255, 480, 255);
                 Velocity = Vector3.Zero;

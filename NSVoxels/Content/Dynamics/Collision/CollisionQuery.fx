@@ -308,8 +308,7 @@ void updateCurrentIndex(int index)
     uint3 absolutePosition_old_int = floor(absolutePosition_old);
     
     int visitedOctants = currentData.visitedOctants;
-    int currentVoxel = getData(absolutePosition_int);
-    
+
     if (visitedOctants == 0)
     {
         dynamicComponents[index].visitedOctants = getOctants(absolutePosition_int);

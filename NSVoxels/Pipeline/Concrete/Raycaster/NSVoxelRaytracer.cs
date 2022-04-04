@@ -87,7 +87,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
 
 
         private float lastFOV;
-        public Texture2D Calculate(Texture3D data, StructuredBuffer accelerator)
+        public Texture2D Calculate(GameTime gameTime, Texture3D data, StructuredBuffer accelerator)
         {
 
             #region Parameter Pass
@@ -130,6 +130,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
             acceleratedRaycasterEffect.Parameters["cameraRotation"].SetValue(YawPitchCamera.YawPitchMatrix);
             acceleratedRaycasterEffect.Parameters["cameraPosition"].SetValue(YawPitchCamera.CameraPosition);
 
+            acceleratedRaycasterEffect.Parameters["gameTimeSeconds"].SetValue((float)gameTime.TotalGameTime.TotalSeconds);
 
             acceleratedRaycasterEffect.CurrentTechnique.Passes[0].ApplyCompute();
 
