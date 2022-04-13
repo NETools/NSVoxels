@@ -234,7 +234,7 @@ namespace NSVoxels
                     int py = (int)(r * Math.Sin(j * Math.PI / 180.0));
 
 
-                    simpleVoxelRotation.AddRigidComponent(new Vector3(i + 150, 450 + px, 300 + py), 0.01f);
+                    simpleVoxelRotation.AddComponent(new Vector3(i + 150, 450 + px, 300 + py));
                 }
             }
 

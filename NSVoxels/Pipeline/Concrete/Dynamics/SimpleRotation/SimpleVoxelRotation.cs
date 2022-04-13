@@ -24,8 +24,8 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
         private Vector3 position_old;
         private Vector3 rotation_old;
 
-        private List<DynamicVoxelComponent> rigidComponents = new List<DynamicVoxelComponent>();
-        private StructuredBuffer rigidComponentsBuffer;
+        private List<DynamicVoxelComponent> components = new List<DynamicVoxelComponent>();
+        private StructuredBuffer componentsBuffer;
 
         private Effect rotationQuery;
         private int numThreads;
@@ -59,7 +59,7 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
             rotationQuery.Parameters["voxelTransformation"].SetValue(transformation_new);
             rotationQuery.Parameters["com_Position"].SetValue(Position);
 
-            rotationQuery.Parameters["dynamicComponents"].SetValue(rigidComponentsBuffer);
+            rotationQuery.Parameters["dynamicComponents"].SetValue(componentsBuffer);
             rotationQuery.Parameters["accelerationStructureBuffer"].SetValue(accelerator);
             rotationQuery.Parameters["voxelDataBuffer"].SetValue(newData);
 
@@ -82,9 +82,9 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
         }
 
 
-        public void AddRigidComponent(Vector3 absolutePosition, float mass)
+        public void AddComponent(Vector3 absolutePosition)
         {
-            rigidComponents.Add(new DynamicVoxelComponent()
+            components.Add(new DynamicVoxelComponent()
             {
                 Position = absolutePosition
             });
@@ -94,13 +94,13 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
 
         public void LoadBuffers()
         {
-            Position /= rigidComponents.Count;
+            Position /= components.Count;
 
-            for (int i = 0; i < rigidComponents.Count; i++)
+            for (int i = 0; i < components.Count; i++)
             {
-                var v = rigidComponents[i].Position;
+                var v = components[i].Position;
                 v -= Position;
-                rigidComponents[i] = new DynamicVoxelComponent()
+                components[i] = new DynamicVoxelComponent()
                 {
                     Position = v
                 };
@@ -108,11 +108,11 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
 
 
 
-            rigidComponentsBuffer = new StructuredBuffer(Statics.GraphicsDevice, typeof(DynamicVoxelComponent), rigidComponents.Count, BufferUsage.None, ShaderAccess.ReadWrite);
+            componentsBuffer = new StructuredBuffer(Statics.GraphicsDevice, typeof(DynamicVoxelComponent), components.Count, BufferUsage.None, ShaderAccess.ReadWrite);
 
-            rigidComponentsBuffer.SetData<DynamicVoxelComponent>(rigidComponents.ToArray());
+            componentsBuffer.SetData<DynamicVoxelComponent>(components.ToArray());
 
-            numThreads = (int)Math.Ceiling(rigidComponents.Count / 64.0) + 1;
+            numThreads = (int)Math.Ceiling(components.Count / 64.0) + 1;
         }
     }
 }
