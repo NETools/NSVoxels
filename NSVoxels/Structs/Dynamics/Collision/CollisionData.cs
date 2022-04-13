@@ -11,6 +11,9 @@ namespace NSVoxels.Structs.Dynamics.Collision
     {
         public Vector3 NetRepellingForces;
         public Vector3 NetCorrectionOffsets;
+
+        public int BlockId;
+
         public int Collisions;
     }
 }

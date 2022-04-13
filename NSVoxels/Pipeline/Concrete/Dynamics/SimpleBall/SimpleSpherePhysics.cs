@@ -35,13 +35,19 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
         private StructuredBuffer collisionQueryBuffer;
         private CollisionData[] collisionResult;
 
-        private SoundEffect soundEffect;
+        private Dictionary<int, SoundEffect> soundEffects;
 
         public SimpleSpherePhysics()
         {
             collisionQuery = Statics.Content.Load<Effect>("Dynamics\\Collision\\CollisionQuery");
-            soundEffect = Statics.Content.Load<SoundEffect>("Sounds\\ballhit");
 
+            soundEffects = new Dictionary<int, SoundEffect>();
+
+
+            soundEffects.Add(1, Statics.Content.Load<SoundEffect>("Sounds\\ballhit"));
+            soundEffects.Add(6, Statics.Content.Load<SoundEffect>("Sounds\\ballhitGrass"));
+            soundEffects.Add(3, Statics.Content.Load<SoundEffect>("Sounds\\ballhitDirt"));
+            soundEffects.Add(4, Statics.Content.Load<SoundEffect>("Sounds\\ballhitWall"));
 
             int maxIterations = (int)Math.Ceiling(
                                         Math.Log(PreStartSettings.VolumeSize / PreStartSettings.MinimumAcceleratorNodeSize) / Math.Log(2));
@@ -93,11 +99,15 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
 
             if (collisionResult[0].Collisions > 0)
             {
-                if (Math.Abs(collisionResult[0].NetRepellingForces.X) > 0.5 ||
+                if (Math.Abs(collisionResult[0].NetRepellingForces.X) > 0.7 ||
                     Math.Abs(collisionResult[0].NetRepellingForces.Y) > 0.5 ||
-                    Math.Abs(collisionResult[0].NetRepellingForces.Z) > 0.5)
+                    Math.Abs(collisionResult[0].NetRepellingForces.Z) > 0.7)
                 {
-                    soundEffect.Play();
+
+
+                    if (soundEffects.ContainsKey(collisionResult[0].BlockId))
+                        soundEffects[collisionResult[0].BlockId].Play();
+               
                 }
 
             }

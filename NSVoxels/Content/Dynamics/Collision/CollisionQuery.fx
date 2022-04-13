@@ -14,6 +14,8 @@ struct CollisionData
     float3 netRepellingForces;
     float3 netCorrectionOffsets;
     
+    int blockId;
+    
     int collisions;
 };
 globallycoherent RWStructuredBuffer<CollisionData> collisionData;
@@ -124,7 +126,7 @@ bool isInsideVolume(float3 position, AABB aabb)
 
 
 ///////////////////////////////////////////////////
-void getCollidingIndex(in Ray ray, in AABB volume, out uint3 arrayIndex)
+void getCollidingIndex(in Ray ray, in AABB volume, out uint3 arrayIndex, out int blockId)
 {
     
     volume.center = max(volume.center - 1, 0);
@@ -186,6 +188,7 @@ void getCollidingIndex(in Ray ray, in AABB volume, out uint3 arrayIndex)
         currentVoxel.center = intPosition3;
     }
     
+    blockId = currentData;
     arrayIndex = intPosition3;
     
 }
@@ -337,7 +340,9 @@ void updateCurrentIndex(int index)
     collisionRay.dir = normalize(com_Velocity);
     collisionRay.dirRcp = rcp(collisionRay.dir);
     
-    getCollidingIndex(collisionRay, createAABB(0, 512), obstacleCenter);
+    int blockId = 0;
+    
+    getCollidingIndex(collisionRay, createAABB(0, 512), obstacleCenter, blockId);
     obstacleCenter += 0.5f;
     float3 currentVoxelCenter = absolutePosition + 0.5f;
     
@@ -360,6 +365,7 @@ void updateCurrentIndex(int index)
         {
             collisionData[0].netRepellingForces += normalize(currentData.position) * length(com_Velocity);
             collisionData[0].netCorrectionOffsets += normalize(positionVector) * depth;
+            collisionData[0].blockId = blockId;
         }
 
     }

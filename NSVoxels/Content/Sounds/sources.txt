@@ -1,0 +1,4 @@
+﻿[ballhit.wav]: https://mixkit.co/free-sound-effects/ball/ (Light impact on the ground)
+[ballhitGrass.wav]: https://www.fesliyanstudios.com/royalty-free-sound-effects-download/footsteps-on-grass-284
+[ballHitWall.wav]: https://www.fesliyanstudios.com/royalty-free-sound-effects-download/footsteps-31
+[ballHitDirt.wav]: https://www.fesliyanstudios.com/royalty-free-sound-effects-download/footsteps-31

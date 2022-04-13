@@ -86,6 +86,24 @@
 /processorParam:Quality=Best
 /build:Sounds/ballhit.wav
 
+#begin Sounds/ballHitDirt.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/ballHitDirt.wav
+
+#begin Sounds/ballhitGrass.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/ballhitGrass.wav
+
+#begin Sounds/ballHitWall.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/ballHitWall.wav
+
 #begin Textures/scene0/0.png
 /importer:TextureImporter
 /processor:TextureProcessor
