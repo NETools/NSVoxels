@@ -17,6 +17,7 @@ using NSVoxels.Pipeline.Concrete.Raycaster;
 using NSVoxels.Pipeline.Stages;
 using NSVoxels.Structs.Dynamics.Simple;
 using System;
+using NSVoxels.Pipeline.Concrete.RAWLoader;
 
 namespace NSVoxels
 {
@@ -260,7 +261,17 @@ namespace NSVoxels
             renderPipeline.Start();
 
 
-      
+
+
+            MacroManager.GetDefault().DefineMacro(Keys.Enter, (a) =>
+            {
+                RAWLoaderXNS loader = new RAWLoaderXNS(@"C:\Users\enesh\source\repos\VoxelizerRaytcast\VoxelizerRaytcast\bin\Debug\netcoreapp3.1\test.raw");
+
+                renderPipeline.UploadData(250, 50, 150, loader.RAWXNSFile);
+
+
+            }, true);
+
 
 
             bool loadedRod = false;

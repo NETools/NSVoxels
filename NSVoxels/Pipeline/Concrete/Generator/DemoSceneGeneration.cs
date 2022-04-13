@@ -48,6 +48,7 @@ namespace NSVoxels.Pipeline.Concrete.Generator
 
             int dispatchCount = (int)Math.Ceiling((double)Data.Width / 4);
             Statics.GraphicsDevice.DispatchCompute(dispatchCount, dispatchCount, dispatchCount);
+
             if (PreStartSettings.UseDoubleBufferedVoxelData)
                 return (Data, DataCopy);
             else return (Data, Data);

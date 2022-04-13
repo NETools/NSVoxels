@@ -73,5 +73,23 @@ namespace NSVoxels.Pipeline.Stages
         {
             modification.Update(gameTime, oldData, newData, accelerator);
         }
+
+        public void UploadData(int startX, int startY, int startZ, int[] data)
+        {
+
+
+
+            newData.SetData<int>(0,
+                startX,
+                startY,
+                startX + 256,
+                startY + 256,
+                startZ,
+                startZ + 256,
+                data,
+                0, 256 * 256 * 256);
+
+
+        }
     }
 }
