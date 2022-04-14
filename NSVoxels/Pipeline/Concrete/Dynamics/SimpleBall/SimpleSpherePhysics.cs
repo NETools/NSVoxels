@@ -103,11 +103,8 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
                     Math.Abs(collisionResult[0].NetRepellingForces.Y) > 0.5 ||
                     Math.Abs(collisionResult[0].NetRepellingForces.Z) > 0.7)
                 {
-
-
                     if (soundEffects.ContainsKey(collisionResult[0].BlockId))
                         soundEffects[collisionResult[0].BlockId].Play();
-               
                 }
 
             }

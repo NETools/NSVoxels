@@ -11,6 +11,6 @@ namespace NSVoxels.Structs.Dynamics.Simple
     {
         public Vector3 Position;
         public Vector3 Direction;
-        public int VisitedOctants;
+        public int Reserved;
     } 
 }

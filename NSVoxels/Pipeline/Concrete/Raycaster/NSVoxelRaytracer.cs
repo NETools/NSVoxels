@@ -27,7 +27,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
             else
             {
                 acceleratedRaycasterEffect = Statics.Content.Load<Effect>("Raycaster\\VoxelRaycaster16x8");
-                divisor = 16;
+                divisor = 4;
             }
         }
 
@@ -136,8 +136,8 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
 
 
             Statics.GraphicsDevice.DispatchCompute(
-                (int)MathF.Ceiling(RaycastingSettings.Width / divisor), 
-                (int)MathF.Ceiling(RaycastingSettings.Height / 8), 1);
+                (int)MathF.Ceiling(RaycastingSettings.Width / 8), 
+                (int)MathF.Ceiling(RaycastingSettings.Height / divisor), 1);
 
             return backbuffer;
         }

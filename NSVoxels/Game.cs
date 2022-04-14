@@ -256,8 +256,6 @@ namespace NSVoxels
             volumeInteraction = new VolumeInteractionRaycaster();
             volumeInteraction.Load();
 
-
-
             renderPipeline.Start();
 
 

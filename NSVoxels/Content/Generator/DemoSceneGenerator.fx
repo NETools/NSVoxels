@@ -113,6 +113,12 @@ void CS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
     //if (globalID.y == 470 && globalID.x == 255 && globalID.z == 256)
     //    setData(globalID, 6);
     
+    //if (globalID.y == 290)
+    //    setData(globalID, 2);
+    
+    //if (globalID.x == 50)
+    //    setData(globalID, 2);
+    
     //return;
     
     float noiseY = snoise(float2(globalID.x / 256.0f, globalID.z / 256.0f)) * 60 + 70;

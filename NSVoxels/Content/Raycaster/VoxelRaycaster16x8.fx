@@ -32,6 +32,8 @@ uniform float iterationScale;
 uniform bool calculateIndirectLightning;
 
 
+uniform float gameTimeSeconds;
+
 ///////////////////////////////////////////////////
 
 struct Voxel
@@ -39,6 +41,7 @@ struct Voxel
     int data;
     bool isReflectable;
     bool isGlass;
+    bool isBright;
 };
 
 uniform RWTexture3D<int> voxelDataBuffer;
@@ -52,8 +55,9 @@ Voxel getVoxel(int packedVoxel)
 {
     Voxel voxel = (Voxel) 0;
     voxel.data = packedVoxel & 0xff;
-    voxel.isReflectable = packedVoxel & (1 << 8);
-    voxel.isGlass = packedVoxel & (1 << 9);
+    voxel.isReflectable = (packedVoxel & (1 << 8)) >> 8;
+    voxel.isGlass = (packedVoxel & (1 << 9)) >> 9;
+    voxel.isBright = (packedVoxel & (1 << 15)) >> 15;
     
     return voxel;
 }
@@ -684,12 +688,12 @@ float4 raytraceScene(Ray ray, out bool result)
     finalColor = float4(initialRaycastRslt.iterations, initialRaycastRslt.iterations, initialRaycastRslt.iterations, 1000000) * iterationScale * showIterations
     + VoxelTextures.SampleLevel(
                                 voxelTexturesSampler,
-                                float3(getTextureCoordinate(initialRaycastRslt.hitPointF32, initialRaycastRslt.surfaceNormal) * oneOverVolumeInitialSize, voxel.data - 1),
+                                float3(getTextureCoordinate(initialRaycastRslt.hitPointF32 + (voxel.isBright) * gameTimeSeconds * 5.0f, initialRaycastRslt.surfaceNormal) * oneOverVolumeInitialSize, voxel.data - 1),
                                 0) * !showIterations;
 
     
     bool liesInShadow = false;
-    if (showShadow)
+    if (showShadow & !voxel.isBright)
         finalColor = calculateShadow(initialRaycastRslt, finalColor, liesInShadow);
     
     if (showReflection & voxel.isReflectable)
@@ -707,7 +711,7 @@ float4 raytraceScene(Ray ray, out bool result)
             float4 reflectedEntityColor =
                                 VoxelTextures.SampleLevel(
                                 voxelTexturesSampler,
-                                float3(getTextureCoordinate(reflectionRaycastRslt.hitPointF32, reflectionRaycastRslt.surfaceNormal) * oneOverVolumeInitialSize, reflectedVoxel.data - 1),
+                                float3(getTextureCoordinate(reflectionRaycastRslt.hitPointF32 + (reflectedVoxel.isBright) * gameTimeSeconds * 5.0f, reflectionRaycastRslt.surfaceNormal) * oneOverVolumeInitialSize, reflectedVoxel.data - 1),
                                 0);
  
             for (int i = 0; i < maxBounces; i++)
@@ -716,7 +720,7 @@ float4 raytraceScene(Ray ray, out bool result)
                 float3 shadowCastOriginRefl = reflectionRaycastRslt.hitPointF32;
         
                 bool dummy = false;
-                if (showShadow)
+                if (showShadow & !reflectedVoxel.isBright)
                     reflectedEntityColor = calculateShadow(reflectionRaycastRslt, reflectedEntityColor, dummy);
             
                 if (reflectedVoxel.isReflectable)
@@ -732,7 +736,7 @@ float4 raytraceScene(Ray ray, out bool result)
                     reflectedEntityColor = reflectedEntityColor * 0.55 +
                                 0.45 * VoxelTextures.SampleLevel(
                                 voxelTexturesSampler,
-                                float3(getTextureCoordinate(reflectionRaycastRslt.hitPointF32, reflectionRaycastRslt.surfaceNormal) * oneOverVolumeInitialSize, reflectedVoxel.data - 1),
+                                float3(getTextureCoordinate(reflectionRaycastRslt.hitPointF32 + (reflectedVoxel.isBright) * gameTimeSeconds * 5.0f, reflectionRaycastRslt.surfaceNormal) * oneOverVolumeInitialSize, reflectedVoxel.data - 1),
                                 0) * !reflectionRaycastRslt.isNull + float4(0.39, 0.58, 0.93, 1) * reflectionRaycastRslt.isNull;
                     
                     
@@ -778,12 +782,15 @@ float4 raytraceScene(Ray ray, out bool result)
         finalColor = calculateTransparency(ray, initialRaycastRslt, finalColor);
     
     
+    if (voxel.isBright)
+        finalColor *= 2.5f;
+    
     result = true;
     return finalColor;
     
 }
 
-[numthreads(16, 8, 1)]
+[numthreads(8, 4, 1)]
 void RaycastingCS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
                     uint localIndex : SV_GroupIndex, uint3 globalID : SV_DispatchThreadID)
 {

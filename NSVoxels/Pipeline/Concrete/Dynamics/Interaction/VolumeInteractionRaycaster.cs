@@ -17,7 +17,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
 {
     public class VolumeInteractionRaycaster : INSModification
     {
-        private Texture2D backbuffer;
+        //private Texture2D backbuffer;
         private Effect acceleratedRaycasterEffect;
 
 
@@ -52,6 +52,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
             positionLookUp.SetData<Vector4>(positionLookUps);
 
 
+            /*
             backbuffer = new Texture2D(
                 Statics.GraphicsDevice, 
                 RaycastingSettings.Width, 
@@ -59,7 +60,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
                 false, 
                 SurfaceFormat.Color, 
                 ShaderAccess.ReadWrite);
-
+            */
 
             acceleratedRaycasterEffect.Parameters["volumeInitialSize"].SetValue(PreStartSettings.VolumeSize);
 
