@@ -114,10 +114,26 @@ void CS(uint3 localID : SV_GroupThreadID, uint3 groupID : SV_GroupID,
     //    setData(globalID, 6);
     
     //if (globalID.y == 290)
-    //    setData(globalID, 2);
+    //    setData(globalID, 6);
     
     //if (globalID.x == 50)
-    //    setData(globalID, 2);
+    //    setData(globalID, 6);
+    
+    
+    //if (globalID.y == 294 && globalID.x == 200 && globalID.z == 200)
+    //    setData(globalID, 1);
+    
+    //if (globalID.y == 293 && globalID.x == 200 && globalID.z == 200)
+    //    setData(globalID, 1);
+    
+    //if (globalID.y == 292 && globalID.x == 200 && globalID.z == 200)
+    //    setData(globalID, 1);
+    //if (globalID.y == 291 && globalID.x == 200 && globalID.z == 200)
+    //    setData(globalID, 1);
+    
+    //if (globalID.y == 290)
+    //    setData(globalID, 3);
+    
     
     //return;
     

@@ -149,6 +149,10 @@ namespace NSVoxels
             {
                 VisualSettings.CalculateIndirectLightning = !VisualSettings.CalculateIndirectLightning;
             }, true);
+
+
+            MacroManager.GetDefault().DefineMacro(Keys.F2, (a) => VisualSettings.ShowNormals = !VisualSettings.ShowNormals, true);
+
             #endregion
 
             MacroManager.GetDefault().DefineMacro(Keys.F5, (a) =>
@@ -248,19 +252,12 @@ namespace NSVoxels
 
             simpleVoxelRotation.LoadBuffers();
 
-            
-
-            //renderPipeline.Modification = voxelRigidPhysics;
-
-
             volumeInteraction = new VolumeInteractionRaycaster();
             volumeInteraction.Load();
 
             renderPipeline.Start();
-
-
-
-
+            
+            
             MacroManager.GetDefault().DefineMacro(Keys.Enter, (a) =>
             {
                 RAWLoaderXNS loader = new RAWLoaderXNS(@"C:\Users\enesh\source\repos\VoxelizerRaytcast\VoxelizerRaytcast\bin\Debug\netcoreapp3.1\test.raw");

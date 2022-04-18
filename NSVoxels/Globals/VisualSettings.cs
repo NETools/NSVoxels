@@ -24,6 +24,8 @@ namespace NSVoxels.Globals
         public static bool ShowIterations;
         public static float IterationScalingFactor;
 
+        public static bool ShowNormals;
+
         public static bool CalculateIndirectLightning;
     }
 }

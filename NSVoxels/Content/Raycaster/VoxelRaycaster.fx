@@ -29,6 +29,8 @@ uniform int maxBounces;
 uniform bool showIterations;
 uniform float iterationScale;
 
+uniform bool showNormals;
+
 uniform bool calculateIndirectLightning;
 
 
@@ -573,7 +575,7 @@ RaytracingResult volumeRayTest(Ray ray, int maxIterations)
                         voxelAABB, iterations);
         
     RaytracingResult rtrcRslt = (RaytracingResult) 0;
-        
+    
     rtrcRslt.voxelDataPayload = voxelData;
     rtrcRslt.hitPointF32 = hitPoint;
     rtrcRslt.hitPointI32 = hitPointInt;
@@ -685,11 +687,14 @@ float4 raytraceScene(Ray ray, out bool result)
     
     Voxel voxel = getVoxel(initialRaycastRslt.voxelDataPayload);
     
-    finalColor = float4(initialRaycastRslt.iterations, initialRaycastRslt.iterations, initialRaycastRslt.iterations, 1000000) * iterationScale * showIterations
+    finalColor = float4(float3(1, 1, 1) * abs(initialRaycastRslt.surfaceNormal), 1) * showNormals +
+    float4(initialRaycastRslt.iterations, initialRaycastRslt.iterations, initialRaycastRslt.iterations, 1000000) 
+    * iterationScale * showIterations * !showNormals
+    
     + VoxelTextures.SampleLevel(
                                 voxelTexturesSampler,
                                 float3(getTextureCoordinate(initialRaycastRslt.hitPointF32 + (voxel.isBright) * gameTimeSeconds * 5.0f, initialRaycastRslt.surfaceNormal) * oneOverVolumeInitialSize, voxel.data - 1),
-                                0) * !showIterations;
+                                0) * !showIterations * !showNormals;
 
     
     bool liesInShadow = false;

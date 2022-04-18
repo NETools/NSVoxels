@@ -119,6 +119,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
             acceleratedRaycasterEffect.Parameters["showIterations"].SetValue(VisualSettings.ShowIterations);
             acceleratedRaycasterEffect.Parameters["iterationScale"].SetValue(VisualSettings.IterationScalingFactor);
 
+            acceleratedRaycasterEffect.Parameters["showNormals"].SetValue(VisualSettings.ShowNormals);
 
             acceleratedRaycasterEffect.Parameters["calculateIndirectLightning"].SetValue(VisualSettings.CalculateIndirectLightning);
 
