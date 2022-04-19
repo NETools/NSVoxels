@@ -74,20 +74,17 @@ namespace NSVoxels.Pipeline.Stages
             modification.Update(gameTime, oldData, newData, accelerator);
         }
 
-        public void UploadData(int startX, int startY, int startZ, int[] data)
+        public void UploadVoxelStream(int startX, int startY, int startZ, int[] data, int dataWidth, int dataHeight, int dataDepth)
         {
-
-
-
             newData.SetData<int>(0,
                 startX,
                 startY,
-                startX + 256,
-                startY + 256,
+                startX + dataWidth,
+                startY + dataHeight,
                 startZ,
-                startZ + 256,
+                startZ + dataDepth,
                 data,
-                0, 256 * 256 * 256);
+                0, dataWidth * dataHeight * dataDepth);
 
 
         }
