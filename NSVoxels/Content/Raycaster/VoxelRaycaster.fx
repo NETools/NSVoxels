@@ -757,32 +757,6 @@ float4 raytraceScene(Ray ray, out bool result)
             finalColor = float4(0.39, 0.58, 0.93, 1);
     }
     
-    /*
-    if (voxel.isReflectable & calculateIndirectLightning & !liesInShadow)
-    {
-        float3 sunReflectorDir = normalize(initialRaycastRslt.hitPointF32 - lightPosition0);
-        float3 reflectedSunReflectorDir = reflect(sunReflectorDir, initialRaycastRslt.surfaceNormal);
-        
-        
-        Ray reflectionRay = (Ray) 0;
-        reflectionRay.dir = reflectedSunReflectorDir;
-        reflectionRay.dirRcp = rcp(reflectionRay.dir);
-        reflectionRay.origin = initialRaycastRslt.hitPointF32 + initialRaycastRslt.surfaceNormal * .1f;
-        
-        RaytracingResult reflectionRaycastRslt = volumeRayTest(reflectionRay, reflectionMaxAcceleratorIterations);
-        Voxel v = getVoxel(reflectionRaycastRslt.voxelDataPayload);
-        
-        if (!reflectionRaycastRslt.isNull && !v.isReflectable)
-            voxelDataBuffer[reflectionRaycastRslt.hitPointI32] = reflectionRaycastRslt.voxelDataPayload | (1 << 28);
-        
-    }
-    if ((initialRaycastRslt.voxelDataPayload >> 28) & 1 == 1)
-    {
-        finalColor *= 2.5f;
-        //voxelDataBuffer[initialRaycastRslt.hitPointI32] = initialRaycastRslt.voxelDataPayload & (~(1 << 28));
-    }
-    */
-    
     if (voxel.isGlass)
         finalColor = calculateTransparency(ray, initialRaycastRslt, finalColor);
     
