@@ -17,10 +17,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
 {
     public class VolumeInteractionRaycaster : INSModification
     {
-        //private Texture2D backbuffer;
         private Effect acceleratedRaycasterEffect;
-
-
         private StructuredBuffer brushDataBuffer;
 
         private int divisor = 64;
@@ -50,17 +47,6 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
 
             Texture2D positionLookUp = new Texture2D(Statics.GraphicsDevice, 8, 1, false, SurfaceFormat.Vector4);
             positionLookUp.SetData<Vector4>(positionLookUps);
-
-
-            /*
-            backbuffer = new Texture2D(
-                Statics.GraphicsDevice, 
-                RaycastingSettings.Width, 
-                RaycastingSettings.Height, 
-                false, 
-                SurfaceFormat.Color, 
-                ShaderAccess.ReadWrite);
-            */
 
             acceleratedRaycasterEffect.Parameters["volumeInitialSize"].SetValue(PreStartSettings.VolumeSize);
 
@@ -104,7 +90,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
 
 
         private float lastFOV;
-        public void Update(GameTime gameTime, Texture3D oldData, Texture3D newData, StructuredBuffer accelerator)
+        public void Update(GameTime gameTime, Texture3D data, StructuredBuffer accelerator)
         {
 
             #region Parameter Pass
@@ -123,7 +109,7 @@ namespace NSVoxels.Pipeline.Concrete.Raycaster
             #endregion
 
             acceleratedRaycasterEffect.Parameters["accelerationStructureBuffer"].SetValue(accelerator);
-            acceleratedRaycasterEffect.Parameters["voxelDataBuffer"].SetValue(newData);
+            acceleratedRaycasterEffect.Parameters["voxelDataBuffer"].SetValue(data);
 
             acceleratedRaycasterEffect.Parameters["brushAdd"].SetValue(InteractionSettings.AddVoxels);
 

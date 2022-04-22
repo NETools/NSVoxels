@@ -56,7 +56,7 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
 
            
         }
-        public void Update(GameTime gameTime, Texture3D oldData, Texture3D newData, StructuredBuffer accelerator)
+        public void Update(GameTime gameTime, Texture3D data, StructuredBuffer accelerator)
         {
             Force += new Vector3(0, -9.81f, 0);
             Force += -Velocity * 0.25f;
@@ -70,7 +70,7 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
 
             collisionQuery.Parameters["dynamicComponents"].SetValue(rigidComponentsBuffer);
             collisionQuery.Parameters["accelerationStructureBuffer"].SetValue(accelerator);
-            collisionQuery.Parameters["voxelDataBuffer"].SetValue(newData);
+            collisionQuery.Parameters["voxelDataBuffer"].SetValue(data);
 
             collisionQuery.Parameters["collisionData"].SetValue(collisionQueryBuffer);
             collisionQuery.CurrentTechnique.Passes[0].ApplyCompute();

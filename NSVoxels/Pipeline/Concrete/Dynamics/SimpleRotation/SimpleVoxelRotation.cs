@@ -45,7 +45,7 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
 
         }
 
-        public void Update(GameTime gameTime, Texture3D oldData, Texture3D newData, StructuredBuffer accelerator)
+        public void Update(GameTime gameTime, Texture3D data, StructuredBuffer accelerator)
         {
 
             Rotation += rotationValue * (float)gameTime.ElapsedGameTime.TotalSeconds * 0.05f;
@@ -61,7 +61,7 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.SimpleBall
 
             rotationQuery.Parameters["dynamicComponents"].SetValue(componentsBuffer);
             rotationQuery.Parameters["accelerationStructureBuffer"].SetValue(accelerator);
-            rotationQuery.Parameters["voxelDataBuffer"].SetValue(newData);
+            rotationQuery.Parameters["voxelDataBuffer"].SetValue(data);
 
             rotationQuery.CurrentTechnique.Passes[0].ApplyCompute();
             Statics.GraphicsDevice.DispatchCompute(numThreads, 1, 1);

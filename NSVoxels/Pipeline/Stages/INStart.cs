@@ -9,6 +9,6 @@ namespace NSVoxels.Pipeline.Stages
 {
     public interface INStart
     {
-        (Texture3D, Texture3D) Begin();
+        Texture3D Begin();
     }
 }

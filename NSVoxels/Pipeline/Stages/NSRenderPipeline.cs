@@ -20,8 +20,7 @@ namespace NSVoxels.Pipeline.Stages
 
         private bool isStarted;
 
-        private Texture3D oldData;
-        private Texture3D newData;
+        private Texture3D data;
 
         private StructuredBuffer accelerator;
 
@@ -34,29 +33,19 @@ namespace NSVoxels.Pipeline.Stages
 
             Modifications = new List<INSModification>();
 
-            var fullData = VoxelDataGenerator.Begin();
-
-            oldData = fullData.Item1;
-            newData = fullData.Item2;
+            data = VoxelDataGenerator.Begin();
 
             AcceleratorStructureGenerator.Load();
-            accelerator = AcceleratorStructureGenerator.Create(newData);
+            accelerator = AcceleratorStructureGenerator.Create(data);
 
             Raytracer.Load();   
         }
 
         public void Update(GameTime gameTime)
         {
-
-            var oldReference = oldData;
-            oldData = newData;
-            newData = oldReference;
-
-            //Modification.Update(oldData, newData, accelerator);
-
             for (int i = 0; i < Modifications.Count; i++)
             {
-                Modifications[i].Update(gameTime, oldData, newData, accelerator);
+                Modifications[i].Update(gameTime, data, accelerator);
             }
         }
 
@@ -64,26 +53,26 @@ namespace NSVoxels.Pipeline.Stages
         {
             if (Raytracer == null) return;
 
-            var result = Raytracer.Calculate(gameTime, newData, accelerator);
+            var result = Raytracer.Calculate(gameTime, data, accelerator);
             PostProcessingFilter.End(result);
 
         }
 
         public void Step(GameTime gameTime, INSModification modification)
         {
-            modification.Update(gameTime, oldData, newData, accelerator);
+            modification.Update(gameTime, data, accelerator);
         }
 
-        public void UploadVoxelStream(int startX, int startY, int startZ, int[] data, int dataWidth, int dataHeight, int dataDepth)
+        public void UploadVoxelStream(int startX, int startY, int startZ, int[] voxels, int dataWidth, int dataHeight, int dataDepth)
         {
-            newData.SetData<int>(0,
+            data.SetData<int>(0,
                 startX,
                 startY,
                 startX + dataWidth,
                 startY + dataHeight,
                 startZ,
                 startZ + dataDepth,
-                data,
+                voxels,
                 0, dataWidth * dataHeight * dataDepth);
 
 

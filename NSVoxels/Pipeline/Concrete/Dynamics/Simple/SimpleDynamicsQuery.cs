@@ -24,12 +24,12 @@ namespace NSVoxels.Pipeline.Concrete.Dynamics.Simple
             this.dynamicBatches.Add(batch);
         }
 
-        public void Update(GameTime gameTime, Texture3D oldData, Texture3D newData, StructuredBuffer accelerator)
+        public void Update(GameTime gameTime, Texture3D data, StructuredBuffer accelerator)
         {
             for (int i = 0; i < dynamicBatches.Count; i++)
             {
                 var currentBatch = dynamicBatches[i];
-                currentBatch.Update(oldData, newData, accelerator);
+                currentBatch.Update(data, accelerator);
             }
         }
     }

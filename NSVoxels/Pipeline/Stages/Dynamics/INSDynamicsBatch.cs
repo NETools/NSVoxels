@@ -9,6 +9,6 @@ namespace NSVoxels.Pipeline.Stages.Dynamics
 {
     public interface INSDynamicsBatch
     {
-        void Update(Texture3D oldData, Texture3D newData, StructuredBuffer accelerator);
+        void Update(Texture3D data, StructuredBuffer accelerator);
     }
 }

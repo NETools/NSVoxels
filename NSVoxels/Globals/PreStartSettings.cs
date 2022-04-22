@@ -17,6 +17,6 @@ namespace NSVoxels.Globals
         public static bool UseVSync { get; set; }
 
 
-        public static bool UseDoubleBufferedVoxelData { get; set; }
+        //public static bool UseDoubleBufferedVoxelData { get; set; }
     }
 }
