@@ -17,9 +17,11 @@ namespace NSVoxels.Pipeline.Concrete.RAWLoader
         {
 
             BinaryFormatter binaryFormatter = new BinaryFormatter();
-            
-            RAWXNSFile = (int[]) binaryFormatter.Deserialize(new FileStream(path, FileMode.Open));
 
+            using (var fs = new FileStream(path, FileMode.Open))
+            {
+                RAWXNSFile = (int[])binaryFormatter.Deserialize(fs);
+            }
 
         }
 

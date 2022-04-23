@@ -262,7 +262,7 @@ namespace NSVoxels
             {
                 RAWLoaderXNS loader = new RAWLoaderXNS(@"C:\Users\enesh\source\repos\VoxelizerRaytcast\VoxelizerRaytcast\bin\Debug\netcoreapp3.1\test.raw");
 
-                renderPipeline.UploadVoxelStream(250, 50, 150, loader.RAWXNSFile, 256, 256, 256);
+                renderPipeline.UploadVoxelArray(250, 50, 150, loader.RAWXNSFile, 256, 256, 256);
 
 
             }, true);

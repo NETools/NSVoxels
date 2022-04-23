@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using NSVoxels.Globals;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -63,7 +64,7 @@ namespace NSVoxels.Pipeline.Stages
             modification.Update(gameTime, data, accelerator);
         }
 
-        public void UploadVoxelStream(int startX, int startY, int startZ, int[] voxels, int dataWidth, int dataHeight, int dataDepth)
+        public void UploadVoxelArray(int startX, int startY, int startZ, int[] voxels, int dataWidth, int dataHeight, int dataDepth)
         {
             data.SetData<int>(0,
                 startX,
