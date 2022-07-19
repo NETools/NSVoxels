@@ -277,6 +277,9 @@ namespace NSVoxels
                 renderPipeline.Modifications.Add(simpleVoxelRotation);
             }, true);
 
+
+            
+
             base.LoadContent();
         }
 
