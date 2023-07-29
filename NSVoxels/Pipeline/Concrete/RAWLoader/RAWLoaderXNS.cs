@@ -20,8 +20,10 @@ namespace NSVoxels.Pipeline.Concrete.RAWLoader
 
             using (var fs = new FileStream(path, FileMode.Open))
             {
-                RAWXNSFile = (int[])binaryFormatter.Deserialize(fs);
-            }
+#pragma warning disable SYSLIB0011 // Typ oder Element ist veraltet
+				RAWXNSFile = (int[])binaryFormatter.Deserialize(fs);
+#pragma warning restore SYSLIB0011 // Typ oder Element ist veraltet
+			}
 
         }
 
